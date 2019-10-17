@@ -27,6 +27,9 @@ namespace Microsoft.EntityFrameworkCore.Query
                 var query = new InExpressionValuesExpandingExpressionVisitor(
                     _sqlExpressionFactory, parametersValues).Visit(selectExpression);
 
+                query = new ParameterNullabilityOptimizingExpressionVisitor(
+                    _sqlExpressionFactory, parametersValues).Visit(query);
+
                 query = new FromSqlParameterApplyingExpressionVisitor(
                     _sqlExpressionFactory,
                     _parameterNameGeneratorFactory.Create(),
