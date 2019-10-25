@@ -910,7 +910,7 @@ CROSS JOIN (
     SELECT TOP(@__p_1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
     FROM [Customers] AS [c]
 ) AS [t1]
-WHERE ([t].[City] = N'Seattle') AND [t].[City] IS NOT NULL
+WHERE [t].[City] = N'Seattle'
 ORDER BY [t].[EmployeeID]");
         }
 
@@ -2378,7 +2378,7 @@ WHERE [o].[OrderID] < 10300");
                 @"SELECT [c].[CustomerID] AS [Id], (
     SELECT COUNT(*)
     FROM [Orders] AS [o]
-    WHERE ([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL) AS [Count]
+    WHERE [c].[CustomerID] = [o].[CustomerID]) AS [Count]
 FROM [Customers] AS [c]
 WHERE [c].[CustomerID] LIKE N'A%'");
         }
@@ -2944,7 +2944,7 @@ WHERE ((CASE
 END | CASE
     WHEN [c].[CustomerID] = N'ANATR' THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)
-END) = CAST(1 AS bit)) AND (([c].[Country] = N'Germany') AND [c].[Country] IS NOT NULL)");
+END) = CAST(1 AS bit)) AND ([c].[Country] = N'Germany')");
         }
 
         public override async Task Where_bitwise_and_with_logical_or(bool isAsync)

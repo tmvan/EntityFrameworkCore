@@ -13,11 +13,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private readonly ISqlExpressionFactory _sqlExpressionFactory;
 
         private bool _isNullable;
+        private bool _canOptimize;
         private readonly List<ColumnExpression> _nonNullableColumns = new List<ColumnExpression>();
 
         public NullSemanticsRewritingExpressionVisitor(ISqlExpressionFactory sqlExpressionFactory)
         {
             _sqlExpressionFactory = sqlExpressionFactory;
+            _canOptimize = true;
         }
 
         protected override Expression VisitExtension(Expression extensionExpression)
@@ -90,6 +92,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private SqlUnaryExpression VisitSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression)
         {
             _isNullable = false;
+
+            var canOptimize = _canOptimize;
+            if (sqlUnaryExpression.OperatorType == ExpressionType.Not)
+            {
+                _canOptimize = false;
+            }
+
             var newOperand = (SqlExpression)Visit(sqlUnaryExpression.Operand);
 
             // IsNull/IsNotNull
@@ -97,6 +106,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 || sqlUnaryExpression.OperatorType == ExpressionType.NotEqual)
             {
                 _isNullable = false;
+            }
+
+            if (sqlUnaryExpression.OperatorType == ExpressionType.Not)
+            {
+                _canOptimize = canOptimize;
             }
 
             return sqlUnaryExpression.Update(newOperand);
@@ -174,17 +188,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private SqlFunctionExpression VisitSqlFunctionExpression(SqlFunctionExpression sqlFunctionExpression)
         {
-            _isNullable = false;
+            //_isNullable = false;
             var newInstance = (SqlExpression)Visit(sqlFunctionExpression.Instance);
-            var isNullable = _isNullable;
+            //var isNullable = _isNullable;
             var newArguments = new SqlExpression[sqlFunctionExpression.Arguments.Count];
             for (var i = 0; i < newArguments.Length; i++)
             {
                 newArguments[i] = (SqlExpression)Visit(sqlFunctionExpression.Arguments[i]);
-                isNullable |= _isNullable;
+                //isNullable |= _isNullable;
             }
 
-            _isNullable = isNullable;
+            //_isNullable = isNullable;
+
+            // TODO: #18555
+            _isNullable = true;
 
             return sqlFunctionExpression.Update(newInstance, newArguments);
         }
@@ -244,6 +261,32 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 var leftIsNull = _sqlExpressionFactory.IsNull(newLeft);
                 var rightIsNull = _sqlExpressionFactory.IsNull(newRight);
+
+                if (_canOptimize
+                    && sqlBinaryExpression.OperatorType == ExpressionType.Equal
+                    && !leftNegated
+                    && !rightNegated)
+                {
+                    // when we use optimized form, the result can still be nullable
+                    // this MAY create worse queries than full expansion if there are multiple levels of comparisons
+                    // especially when they are negated at top level: e.g. (a == b) != (c == d)
+                    if (leftNullable && rightNullable)
+                    {
+                        _isNullable = true;
+
+                        return _sqlExpressionFactory.OrElse(
+                            _sqlExpressionFactory.Equal(newLeft, newRight),
+                            _sqlExpressionFactory.AndAlso(leftIsNull, rightIsNull));
+                    }
+
+                    if ((leftNullable && !rightNullable)
+                        || (!leftNullable && rightNullable))
+                    {
+                        _isNullable = true;
+
+                        return _sqlExpressionFactory.Equal(newLeft, newRight);
+                    }
+                }
 
                 // doing a full null semantics rewrite - removing all nulls from truth table
                 // this will NOT be correct once we introduce simplified null semantics

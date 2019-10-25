@@ -200,30 +200,30 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     sqlBinaryExpression.TypeMapping);
             }
 
-            // those optimizations are only valid in 2-value logic
-            // they are safe to do here because null semantics removes possibility of nulls in the tree
-            // however if we decide to do "partial" null semantics (that doesn't distinguish between NULL and FALSE, e.g. for predicates)
-            // we need to be extra careful here
-            if (!_useRelationalNulls
-                && (sqlBinaryExpression.OperatorType == ExpressionType.Equal || sqlBinaryExpression.OperatorType == ExpressionType.NotEqual))
-            {
-                // op(a, b) == true -> op(a, b)
-                // op(a, b) != false -> op(a, b)
-                // op(a, b) == false -> !op(a, b)
-                // op(a, b) != true -> !op(a, b)
-                var constant = sqlBinaryExpression.Left as SqlConstantExpression ?? sqlBinaryExpression.Right as SqlConstantExpression;
-                var binary = sqlBinaryExpression.Left as SqlBinaryExpression ?? sqlBinaryExpression.Right as SqlBinaryExpression;
-                if (constant != null && binary != null && TryNegate(binary.OperatorType, out var negated))
-                {
-                    return (bool)constant.Value == (sqlBinaryExpression.OperatorType == ExpressionType.Equal)
-                        ? binary
-                        : SqlExpressionFactory.MakeBinary(
-                            negated,
-                            sqlBinaryExpression.Left,
-                            sqlBinaryExpression.Right,
-                            sqlBinaryExpression.TypeMapping);
-                }
-            }
+            //// those optimizations are only valid in 2-value logic
+            //// they are safe to do here because null semantics removes possibility of nulls in the tree
+            //// however if we decide to do "partial" null semantics (that doesn't distinguish between NULL and FALSE, e.g. for predicates)
+            //// we need to be extra careful here
+            //if (!_useRelationalNulls
+            //    && (sqlBinaryExpression.OperatorType == ExpressionType.Equal || sqlBinaryExpression.OperatorType == ExpressionType.NotEqual))
+            //{
+            //    // op(a, b) == true -> op(a, b)
+            //    // op(a, b) != false -> op(a, b)
+            //    // op(a, b) == false -> !op(a, b)
+            //    // op(a, b) != true -> !op(a, b)
+            //    var constant = sqlBinaryExpression.Left as SqlConstantExpression ?? sqlBinaryExpression.Right as SqlConstantExpression;
+            //    var binary = sqlBinaryExpression.Left as SqlBinaryExpression ?? sqlBinaryExpression.Right as SqlBinaryExpression;
+            //    if (constant != null && binary != null && TryNegate(binary.OperatorType, out var negated))
+            //    {
+            //        return (bool)constant.Value == (sqlBinaryExpression.OperatorType == ExpressionType.Equal)
+            //            ? binary
+            //            : SqlExpressionFactory.MakeBinary(
+            //                negated,
+            //                sqlBinaryExpression.Left,
+            //                sqlBinaryExpression.Right,
+            //                sqlBinaryExpression.TypeMapping);
+            //    }
+            //}
 
             return sqlBinaryExpression.Update(newLeft, newRight);
         }

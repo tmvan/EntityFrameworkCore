@@ -28,7 +28,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             AssertSql(
                 @"SELECT COUNT(*)
 FROM [Customers] AS [c]
-WHERE (IsDate([c].[FirstName]) = CAST(0 AS bit)) AND IsDate([c].[FirstName]) IS NOT NULL");
+WHERE IsDate([c].[FirstName]) = CAST(0 AS bit)");
         }
 
         public override void Scalar_Function_With_Translator_Translates_Static()
@@ -352,7 +352,7 @@ WHERE ([dbo].[GetCustomerWithMostOrdersAfterDate](@__startDate_1) = [c].[Id]) AN
 
 SELECT TOP(2) [c].[Id]
 FROM [Customers] AS [c]
-WHERE ([c].[Id] = [dbo].[GetCustomerWithMostOrdersAfterDate]([dbo].[GetReportingPeriodStartDate](@__period_1))) AND [dbo].[GetCustomerWithMostOrdersAfterDate]([dbo].[GetReportingPeriodStartDate](@__period_1)) IS NOT NULL");
+WHERE [c].[Id] = [dbo].[GetCustomerWithMostOrdersAfterDate]([dbo].[GetReportingPeriodStartDate](@__period_1))");
         }
 
         public override void Scalar_Function_Where_Nested_Instance()

@@ -129,13 +129,13 @@ WHERE ([c].[City] = @__city_0) AND [c].[City] IS NOT NULL");
 
 SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE (CAST([e].[ReportsTo] AS bigint) = @__p_0) AND [e].[ReportsTo] IS NOT NULL",
+WHERE CAST([e].[ReportsTo] AS bigint) = @__p_0",
                 //
                 @"@__p_0='5' (Nullable = true)
 
 SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE (CAST([e].[ReportsTo] AS bigint) = @__p_0) AND [e].[ReportsTo] IS NOT NULL");
+WHERE CAST([e].[ReportsTo] AS bigint) = @__p_0");
         }
 
         public override async Task Where_method_call_nullable_type_reverse_closure_via_query_cache(bool isAsync)
@@ -434,7 +434,7 @@ FROM [Customers] AS [c]");
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ([e].[Title] = N'Sales Representative') AND [e].[Title] IS NOT NULL");
+WHERE [e].[Title] = N'Sales Representative'");
         }
 
         public override async Task Where_simple_shadow_projection(bool isAsync)
@@ -579,13 +579,13 @@ WHERE CAST(0 AS bit) = CAST(1 AS bit)");
 
 SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ([e].[ReportsTo] = @__intPrm_0) AND [e].[ReportsTo] IS NOT NULL",
+WHERE [e].[ReportsTo] = @__intPrm_0",
                 //
                 @"@__intPrm_0='2'
 
 SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE (@__intPrm_0 = [e].[ReportsTo]) AND [e].[ReportsTo] IS NOT NULL");
+WHERE @__intPrm_0 = [e].[ReportsTo]");
         }
 
         public override async Task Where_equals_on_matched_nullable_int_types(bool isAsync)
