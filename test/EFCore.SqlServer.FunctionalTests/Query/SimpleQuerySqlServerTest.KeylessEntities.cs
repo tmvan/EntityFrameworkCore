@@ -85,7 +85,7 @@ INNER JOIN (
 FROM (
     select * from ""Orders""
 ) AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
+WHERE [o].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task KeylessEntity_with_defining_query_and_correlated_collection(bool isAsync)

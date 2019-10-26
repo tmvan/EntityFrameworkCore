@@ -394,6 +394,15 @@ FROM root c
 WHERE (c[""Discriminator""] = ""Employee"")");
         }
 
+        [ConditionalTheory(Skip = "Issue#17246")]
+        public override async Task Where_query_composition_entity_equality_no_elements_FirstOrDefault_not_equal(bool isAsync)
+        {
+            await base.Where_query_composition_entity_equality_no_elements_FirstOrDefault_not_equal(isAsync);
+
+            AssertSql(
+                @"");
+        }
+
         [ConditionalTheory(Skip = "Issue #17246")]
         public override Task Where_query_composition_entity_equality_no_elements_First(bool isAsync)
         {

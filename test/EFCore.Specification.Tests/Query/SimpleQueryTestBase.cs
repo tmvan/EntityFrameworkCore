@@ -1906,6 +1906,17 @@ namespace Microsoft.EntityFrameworkCore.Query
 
         [ConditionalTheory]
         [MemberData(nameof(IsAsyncData))]
+        public virtual Task Where_query_composition_entity_equality_no_elements_FirstOrDefault_not_equal(bool isAsync)
+        {
+            return AssertQuery(
+                isAsync,
+                ss => from e1 in ss.Set<Employee>()
+                      where ss.Set<Employee>().FirstOrDefault(e2 => e2.EmployeeID == 42) != new Employee()
+                      select e1);
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
         public virtual Task Where_query_composition_entity_equality_no_elements_First(bool isAsync)
         {
             return AssertQuery(

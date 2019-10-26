@@ -250,7 +250,7 @@ WHERE [c].[Id] = 1");
             AssertSql(
                 @"SELECT COUNT(*)
 FROM [Customers] AS [c]
-WHERE (IsDate([c].[FirstName]) = CAST(0 AS bit)) AND IsDate([c].[FirstName]) IS NOT NULL");
+WHERE IsDate([c].[FirstName]) = CAST(0 AS bit)");
         }
 
         public override void Scalar_Function_With_Translator_Translates_Instance()

@@ -666,7 +666,7 @@ WHERE (([l0].[Name] = N'L2 05') AND [l0].[Name] IS NOT NULL) OR (([l1].[Name] = 
                 @"SELECT [l].[Id]
 FROM [LevelOne] AS [l]
 LEFT JOIN [LevelTwo] AS [l0] ON [l].[Id] = [l0].[Level1_Optional_Id]
-WHERE (([l0].[Name] = N'L2 05') AND [l0].[Name] IS NOT NULL) OR (([l0].[Name] <> N'L2 42') OR [l0].[Name] IS NULL)");
+WHERE ([l0].[Name] = N'L2 05') OR (([l0].[Name] <> N'L2 42') OR [l0].[Name] IS NULL)");
         }
 
         public override async Task Where_nav_prop_reference_optional2_via_DefaultIfEmpty(bool isAsync)

@@ -30,11 +30,11 @@ WHERE ([c0].[City] = N'London') AND [c0].[City] IS NOT NULL");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'Berlin') AND [c].[City] IS NOT NULL
+WHERE [c].[City] = N'Berlin'
 UNION ALL
 SELECT [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
 FROM [Customers] AS [c0]
-WHERE ([c0].[City] = N'London') AND [c0].[City] IS NOT NULL");
+WHERE [c0].[City] = N'London'");
         }
 
         public override async Task Intersect(bool isAsync)
@@ -44,7 +44,7 @@ WHERE ([c0].[City] = N'London') AND [c0].[City] IS NOT NULL");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL
+WHERE [c].[City] = N'London'
 INTERSECT
 SELECT [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
 FROM [Customers] AS [c0]
@@ -186,18 +186,18 @@ FROM (
             FROM (
                 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
                 FROM [Customers] AS [c]
-                WHERE ([c].[City] = N'Berlin') AND [c].[City] IS NOT NULL
+                WHERE [c].[City] = N'Berlin'
                 UNION
                 SELECT [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
                 FROM [Customers] AS [c0]
-                WHERE ([c0].[City] = N'London') AND [c0].[City] IS NOT NULL
+                WHERE [c0].[City] = N'London'
             ) AS [t]
             ORDER BY [t].[CustomerID]
         ) AS [t0]
         UNION
         SELECT [c1].[CustomerID], [c1].[Address], [c1].[City], [c1].[CompanyName], [c1].[ContactName], [c1].[ContactTitle], [c1].[Country], [c1].[Fax], [c1].[Phone], [c1].[PostalCode], [c1].[Region]
         FROM [Customers] AS [c1]
-        WHERE ([c1].[City] = N'Mannheim') AND [c1].[City] IS NOT NULL
+        WHERE [c1].[City] = N'Mannheim'
     ) AS [t1]
 ) AS [t2]
 ORDER BY [t2].[CustomerID]");
@@ -298,16 +298,16 @@ FROM (
     FROM (
         SELECT [c].[City] AS [Foo], [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
         FROM [Customers] AS [c]
-        WHERE ([c].[City] = N'Berlin') AND [c].[City] IS NOT NULL
+        WHERE [c].[City] = N'Berlin'
         UNION
         SELECT [c0].[Region] AS [Foo], [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
         FROM [Customers] AS [c0]
-        WHERE ([c0].[City] = N'London') AND [c0].[City] IS NOT NULL
+        WHERE [c0].[City] = N'London'
     ) AS [t]
     ORDER BY [t].[Foo]
     OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
 ) AS [t0]
-WHERE ([t0].[Foo] = N'Berlin') AND [t0].[Foo] IS NOT NULL
+WHERE [t0].[Foo] = N'Berlin'
 ORDER BY [t0].[Foo]");
         }
 

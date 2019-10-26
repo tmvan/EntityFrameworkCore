@@ -99,7 +99,7 @@ INNER JOIN (
     SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
     FROM [Orders] AS [o]
 ) AS [t] ON [c].[CustomerID] = [t].[CustomerID]
-WHERE ([t].[CustomerID] = N'ALFKI') AND [t].[CustomerID] IS NOT NULL");
+WHERE [t].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Join_customers_orders_with_subquery_with_take(bool isAsync)
@@ -147,7 +147,7 @@ INNER JOIN (
     FROM [Orders] AS [o]
     ORDER BY [o].[OrderID]
 ) AS [t] ON [c].[CustomerID] = [t].[CustomerID]
-WHERE ([t].[CustomerID] = N'ALFKI') AND [t].[CustomerID] IS NOT NULL");
+WHERE [t].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Join_customers_orders_with_subquery_predicate(bool isAsync)
@@ -180,7 +180,7 @@ INNER JOIN (
     WHERE [o].[OrderID] > 0
     ORDER BY [o].[OrderID]
 ) AS [t] ON [c].[CustomerID] = [t].[CustomerID]
-WHERE ([t].[CustomerID] = N'ALFKI') AND [t].[CustomerID] IS NOT NULL");
+WHERE [t].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Join_composite_key(bool isAsync)
@@ -416,7 +416,7 @@ WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Customers] AS [c]
 INNER JOIN [Orders] AS [o] ON [c].[CustomerID] = [o].[CustomerID]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) OR ([c].[CustomerID] = N'ANATR')
+WHERE ([o].[CustomerID] = N'ALFKI') OR ([c].[CustomerID] = N'ANATR')
 ORDER BY [c].[City]");
         }
 

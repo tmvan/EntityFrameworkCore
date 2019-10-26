@@ -244,7 +244,7 @@ ORDER BY [t].[CustomerID]");
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Orders] AS [o]
 LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
-WHERE ([c].[City] = N'Seattle') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'Seattle'");
         }
 
         public override async Task Include_with_multiple_optional_navigations(bool isAsync)
