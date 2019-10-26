@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
-    public class NullSemanticsRewritingExpressionVisitor : ExpressionVisitor
+    public class NullSemanticsRewritingExpressionVisitor : SqlExpressionVisitor
     {
         private readonly ISqlExpressionFactory _sqlExpressionFactory;
 
@@ -22,102 +22,124 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _canOptimize = true;
         }
 
+        // issue #18522
         protected override Expression VisitExtension(Expression extensionExpression)
-        {
-            switch (extensionExpression)
+            => extensionExpression switch
             {
-                case SqlConstantExpression sqlConstantExpression:
-                    return VisitSqlConstantExpression(sqlConstantExpression);
+                SqlBinaryExpression sqlBinaryExpression => VisitSqlBinary(sqlBinaryExpression),
+                SqlConstantExpression sqlConstantExpression => VisitSqlConstant(sqlConstantExpression),
+                _ => base.VisitExtension(extensionExpression),
+            };
 
-                case ColumnExpression columnExpression:
-                    return VisitColumnExpression(columnExpression);
-
-                case SqlParameterExpression sqlParameterExpression:
-                    return VisitSqlParameterExpression(sqlParameterExpression);
-
-                case SqlUnaryExpression sqlUnaryExpression:
-                    return VisitSqlUnaryExpression(sqlUnaryExpression);
-
-                case LikeExpression likeExpression:
-                    return VisitLikeExpression(likeExpression);
-
-                case SqlFunctionExpression sqlFunctionExpression:
-                    return VisitSqlFunctionExpression(sqlFunctionExpression);
-
-                case SqlBinaryExpression sqlBinaryExpression:
-                    return VisitSqlBinaryExpression(sqlBinaryExpression);
-
-                case CaseExpression caseExpression:
-                    return VisitCaseExpression(caseExpression);
-
-                case InnerJoinExpression innerJoinExpression:
-                    return VisitInnerJoinExpression(innerJoinExpression);
-
-                case LeftJoinExpression leftJoinExpression:
-                    return VisitLeftJoinExpression(leftJoinExpression);
-
-                case ScalarSubqueryExpression subSelectExpression:
-                    var result = base.VisitExtension(subSelectExpression);
-                    _isNullable = true;
-
-                    return result;
-
-                default:
-                    return base.VisitExtension(extensionExpression);
-            }
-        }
-
-        private SqlConstantExpression VisitSqlConstantExpression(SqlConstantExpression sqlConstantExpression)
+        protected override Expression VisitCase(CaseExpression caseExpression)
         {
-            _isNullable = sqlConstantExpression.Value == null;
+            _isNullable = false;
+            // if there is no 'else' there is a possibility of null, when none of the conditions are met
+            // otherwise the result is nullable if any of the WhenClause results OR ElseResult is nullable
+            var isNullable = caseExpression.ElseResult == null;
 
-            return sqlConstantExpression;
+            var canOptimize = _canOptimize;
+            var testIsCondition = caseExpression.Operand == null;
+            _canOptimize = false;
+            var newOperand = (SqlExpression)Visit(caseExpression.Operand);
+            var newWhenClauses = new List<CaseWhenClause>();
+            foreach (var whenClause in caseExpression.WhenClauses)
+            {
+                _canOptimize = testIsCondition;
+                var newTest = (SqlExpression)Visit(whenClause.Test);
+                _canOptimize = false;
+                var newResult = (SqlExpression)Visit(whenClause.Result);
+                isNullable |= _isNullable;
+                newWhenClauses.Add(new CaseWhenClause(newTest, newResult));
+            }
+
+            _canOptimize = false;
+            var newElseResult = (SqlExpression)Visit(caseExpression.ElseResult);
+            _isNullable |= isNullable;
+            _canOptimize = canOptimize;
+
+            return caseExpression.Update(newOperand, newWhenClauses, newElseResult);
         }
 
-        private ColumnExpression VisitColumnExpression(ColumnExpression columnExpression)
+        protected override Expression VisitColumn(ColumnExpression columnExpression)
         {
             _isNullable = !_nonNullableColumns.Contains(columnExpression) && columnExpression.IsNullable;
 
             return columnExpression;
         }
 
-        private SqlParameterExpression VisitSqlParameterExpression(SqlParameterExpression sqlParameterExpression)
+        protected override Expression VisitCrossApply(CrossApplyExpression crossApplyExpression)
         {
-            // at this point we assume every parameter is nullable, we will filter out the non-nullable ones once we know the actual values
-            _isNullable = true;
-
-            return sqlParameterExpression;
-        }
-
-        private SqlUnaryExpression VisitSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression)
-        {
-            _isNullable = false;
-
             var canOptimize = _canOptimize;
-            if (sqlUnaryExpression.OperatorType == ExpressionType.Not)
-            {
-                _canOptimize = false;
-            }
+            _canOptimize = false;
+            var table = (TableExpressionBase)Visit(crossApplyExpression.Table);
+            _canOptimize = canOptimize;
 
-            var newOperand = (SqlExpression)Visit(sqlUnaryExpression.Operand);
-
-            // IsNull/IsNotNull
-            if (sqlUnaryExpression.OperatorType == ExpressionType.Equal
-                || sqlUnaryExpression.OperatorType == ExpressionType.NotEqual)
-            {
-                _isNullable = false;
-            }
-
-            if (sqlUnaryExpression.OperatorType == ExpressionType.Not)
-            {
-                _canOptimize = canOptimize;
-            }
-
-            return sqlUnaryExpression.Update(newOperand);
+            return crossApplyExpression.Update(table);
         }
 
-        private LikeExpression VisitLikeExpression(LikeExpression likeExpression)
+        protected override Expression VisitCrossJoin(CrossJoinExpression crossJoinExpression)
         {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var table = (TableExpressionBase)Visit(crossJoinExpression.Table);
+            _canOptimize = canOptimize;
+
+            return crossJoinExpression.Update(table);
+        }
+
+        protected override Expression VisitExcept(ExceptExpression exceptExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var source1 = (SelectExpression)Visit(exceptExpression.Source1);
+            var source2 = (SelectExpression)Visit(exceptExpression.Source2);
+            _canOptimize = canOptimize;
+
+            return exceptExpression.Update(source1, source2);
+        }
+
+        protected override Expression VisitExists(ExistsExpression existsExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var newSubquery = (SelectExpression)Visit(existsExpression.Subquery);
+            _canOptimize = canOptimize;
+
+            return existsExpression.Update(newSubquery);
+        }
+
+        protected override Expression VisitFromSql(FromSqlExpression fromSqlExpression)
+            => fromSqlExpression;
+
+        protected override Expression VisitIn(InExpression inExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var item = (SqlExpression)Visit(inExpression.Item);
+            var subquery = (SelectExpression)Visit(inExpression.Subquery);
+            var values = (SqlExpression)Visit(inExpression.Values);
+            _canOptimize = canOptimize;
+
+            // TODO: nullability!
+            return inExpression.Update(item, values, subquery);
+        }
+
+        protected override Expression VisitIntersect(IntersectExpression intersectExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var source1 = (SelectExpression)Visit(intersectExpression.Source1);
+            var source2 = (SelectExpression)Visit(intersectExpression.Source2);
+            _canOptimize = canOptimize;
+
+            return intersectExpression.Update(source1, source2);
+        }
+
+        protected override Expression VisitLike(LikeExpression likeExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
             _isNullable = false;
             var newMatch = (SqlExpression)Visit(likeExpression.Match);
             var isNullable = _isNullable;
@@ -125,11 +147,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             isNullable |= _isNullable;
             var newEscapeChar = (SqlExpression)Visit(likeExpression.EscapeChar);
             _isNullable |= isNullable;
+            _canOptimize = canOptimize;
 
             return likeExpression.Update(newMatch, newPattern, newEscapeChar);
         }
 
-        private InnerJoinExpression VisitInnerJoinExpression(InnerJoinExpression innerJoinExpression)
+        protected override Expression VisitInnerJoin(InnerJoinExpression innerJoinExpression)
         {
             var newTable = (TableExpressionBase)Visit(innerJoinExpression.Table);
             var newJoinPredicate = VisitJoinPredicate((SqlBinaryExpression)innerJoinExpression.JoinPredicate);
@@ -137,7 +160,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             return innerJoinExpression.Update(newTable, newJoinPredicate);
         }
 
-        private LeftJoinExpression VisitLeftJoinExpression(LeftJoinExpression leftJoinExpression)
+        protected override Expression VisitLeftJoin(LeftJoinExpression leftJoinExpression)
         {
             var newTable = (TableExpressionBase)Visit(leftJoinExpression.Table);
             var newJoinPredicate = VisitJoinPredicate((SqlBinaryExpression)leftJoinExpression.JoinPredicate);
@@ -157,58 +180,131 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             if (predicate.OperatorType == ExpressionType.AndAlso)
             {
-                return VisitSqlBinaryExpression(predicate);
+                return (SqlExpression)VisitSqlBinary(predicate);
             }
 
             throw new InvalidOperationException("Unexpected join predicate shape: " + predicate);
         }
 
-        private CaseExpression VisitCaseExpression(CaseExpression caseExpression)
+        protected override Expression VisitOrdering(OrderingExpression orderingExpression)
         {
-            _isNullable = false;
-            // if there is no 'else' there is a possibility of null, when none of the conditions are met
-            // otherwise the result is nullable if any of the WhenClause results OR ElseResult is nullable
-            var isNullable = caseExpression.ElseResult == null;
+            var expression = (SqlExpression)Visit(orderingExpression.Expression);
 
-            var newOperand = (SqlExpression)Visit(caseExpression.Operand);
-            var newWhenClauses = new List<CaseWhenClause>();
-            foreach (var whenClause in caseExpression.WhenClauses)
-            {
-                var newTest = (SqlExpression)Visit(whenClause.Test);
-                var newResult = (SqlExpression)Visit(whenClause.Result);
-                isNullable |= _isNullable;
-                newWhenClauses.Add(new CaseWhenClause(newTest, newResult));
-            }
-
-            var newElseResult = (SqlExpression)Visit(caseExpression.ElseResult);
-            _isNullable |= isNullable;
-
-            return caseExpression.Update(newOperand, newWhenClauses, newElseResult);
+            return orderingExpression.Update(expression);
         }
 
-        private SqlFunctionExpression VisitSqlFunctionExpression(SqlFunctionExpression sqlFunctionExpression)
+        protected override Expression VisitOuterApply(OuterApplyExpression outerApplyExpression)
         {
-            //_isNullable = false;
-            var newInstance = (SqlExpression)Visit(sqlFunctionExpression.Instance);
-            //var isNullable = _isNullable;
-            var newArguments = new SqlExpression[sqlFunctionExpression.Arguments.Count];
-            for (var i = 0; i < newArguments.Length; i++)
-            {
-                newArguments[i] = (SqlExpression)Visit(sqlFunctionExpression.Arguments[i]);
-                //isNullable |= _isNullable;
-            }
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var table = (TableExpressionBase)Visit(outerApplyExpression.Table);
+            _canOptimize = canOptimize;
 
-            //_isNullable = isNullable;
-
-            // TODO: #18555
-            _isNullable = true;
-
-            return sqlFunctionExpression.Update(newInstance, newArguments);
+            return outerApplyExpression.Update(table);
         }
 
-        private SqlBinaryExpression VisitSqlBinaryExpression(SqlBinaryExpression sqlBinaryExpression)
+        protected override Expression VisitProjection(ProjectionExpression projectionExpression)
+        {
+            var expression = (SqlExpression)Visit(projectionExpression.Expression);
+
+            return projectionExpression.Update(expression);
+        }
+
+        protected override Expression VisitRowNumber(RowNumberExpression rowNumberExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var changed = false;
+            var partitions = new List<SqlExpression>();
+            foreach (var partition in rowNumberExpression.Partitions)
+            {
+                var newPartition = (SqlExpression)Visit(partition);
+                changed |= newPartition != partition;
+                partitions.Add(newPartition);
+            }
+
+            var orderings = new List<OrderingExpression>();
+            foreach (var ordering in rowNumberExpression.Orderings)
+            {
+                var newOrdering = (OrderingExpression)Visit(ordering);
+                changed |= newOrdering != ordering;
+                orderings.Add(newOrdering);
+            }
+
+            _canOptimize = canOptimize;
+
+            return rowNumberExpression.Update(partitions, orderings);
+        }
+
+        // TODO: test null semantics on subquery - what should be nullability of select expression?
+        protected override Expression VisitSelect(SelectExpression selectExpression)
+        {
+            var changed = false;
+            var canOptimize = _canOptimize;
+            var projections = new List<ProjectionExpression>();
+            _canOptimize = false;
+            foreach (var item in selectExpression.Projection)
+            {
+                var updatedProjection = (ProjectionExpression)Visit(item);
+                projections.Add(updatedProjection);
+                changed |= updatedProjection != item;
+            }
+
+            var tables = new List<TableExpressionBase>();
+            foreach (var table in selectExpression.Tables)
+            {
+                var newTable = (TableExpressionBase)Visit(table);
+                changed |= newTable != table;
+                tables.Add(newTable);
+            }
+
+            _canOptimize = true;
+            var predicate = (SqlExpression)Visit(selectExpression.Predicate);
+            changed |= predicate != selectExpression.Predicate;
+
+            var groupBy = new List<SqlExpression>();
+            _canOptimize = false;
+            foreach (var groupingKey in selectExpression.GroupBy)
+            {
+                var newGroupingKey = (SqlExpression)Visit(groupingKey);
+                changed |= newGroupingKey != groupingKey;
+                groupBy.Add(newGroupingKey);
+            }
+
+            _canOptimize = true;
+            var havingExpression = (SqlExpression)Visit(selectExpression.Having);
+            changed |= havingExpression != selectExpression.Having;
+
+            var orderings = new List<OrderingExpression>();
+            _canOptimize = false;
+            foreach (var ordering in selectExpression.Orderings)
+            {
+                var orderingExpression = (SqlExpression)Visit(ordering.Expression);
+                changed |= orderingExpression != ordering.Expression;
+                orderings.Add(ordering.Update(orderingExpression));
+            }
+
+            var offset = (SqlExpression)Visit(selectExpression.Offset);
+            changed |= offset != selectExpression.Offset;
+
+            var limit = (SqlExpression)Visit(selectExpression.Limit);
+            changed |= limit != selectExpression.Limit;
+
+            _canOptimize = canOptimize;
+
+            return changed
+                ? selectExpression.Update(
+                    projections, tables, predicate, groupBy, havingExpression, orderings, limit, offset, selectExpression.IsDistinct,
+                    selectExpression.Alias)
+                : selectExpression;
+        }
+
+        protected override Expression VisitSqlBinary(SqlBinaryExpression sqlBinaryExpression)
         {
             _isNullable = false;
+            var canOptimize = _canOptimize;
+            _canOptimize = sqlBinaryExpression.OperatorType == ExpressionType.AndAlso
+                || sqlBinaryExpression.OperatorType == ExpressionType.OrElse;
 
             var nonNullableColumns = new List<ColumnExpression>();
             if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
@@ -262,7 +358,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var leftIsNull = _sqlExpressionFactory.IsNull(newLeft);
                 var rightIsNull = _sqlExpressionFactory.IsNull(newRight);
 
-                if (_canOptimize
+                // we use original value of "canOptimize" so that top level is optimized, but nesting is not
+                // e.g. (a == b) == (c == d), we do full expansion for (a == b) and (c == d), so we don't need any extra terms for the top level comparison
+                if (canOptimize
                     && sqlBinaryExpression.OperatorType == ExpressionType.Equal
                     && !leftNegated
                     && !rightNegated)
@@ -283,6 +381,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         || (!leftNullable && rightNullable))
                     {
                         _isNullable = true;
+                        _canOptimize = canOptimize;
 
                         return _sqlExpressionFactory.Equal(newLeft, newRight);
                     }
@@ -374,8 +473,97 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
 
             _isNullable = leftNullable || rightNullable;
+            _canOptimize = canOptimize;
 
             return sqlBinaryExpression.Update(newLeft, newRight);
+        }
+
+        protected override Expression VisitSqlConstant(SqlConstantExpression sqlConstantExpression)
+        {
+            _isNullable = sqlConstantExpression.Value == null;
+
+            return sqlConstantExpression;
+        }
+
+        protected override Expression VisitSqlFragment(SqlFragmentExpression sqlFragmentExpression)
+            => sqlFragmentExpression;
+
+        protected override Expression VisitSqlFunction(SqlFunctionExpression sqlFunctionExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+
+            var newInstance = (SqlExpression)Visit(sqlFunctionExpression.Instance);
+            var newArguments = new SqlExpression[sqlFunctionExpression.Arguments.Count];
+            for (var i = 0; i < newArguments.Length; i++)
+            {
+                newArguments[i] = (SqlExpression)Visit(sqlFunctionExpression.Arguments[i]);
+            }
+
+            _canOptimize = canOptimize;
+
+            // TODO: #18555
+            _isNullable = true;
+
+            return sqlFunctionExpression.Update(newInstance, newArguments);
+        }
+
+        protected override Expression VisitSqlParameter(SqlParameterExpression sqlParameterExpression)
+        {
+            // at this point we assume every parameter is nullable, we will filter out the non-nullable ones once we know the actual values
+            _isNullable = true;
+
+            return sqlParameterExpression;
+        }
+
+        protected override Expression VisitSqlUnary(SqlUnaryExpression sqlCastExpression)
+        {
+            _isNullable = false;
+
+            var canOptimize = _canOptimize;
+            //if (sqlCastExpression.OperatorType == ExpressionType.Not)
+            //{
+                _canOptimize = false;
+            //}
+
+            var newOperand = (SqlExpression)Visit(sqlCastExpression.Operand);
+
+            // IsNull/IsNotNull
+            if (sqlCastExpression.OperatorType == ExpressionType.Equal
+                || sqlCastExpression.OperatorType == ExpressionType.NotEqual)
+            {
+                _isNullable = false;
+            }
+
+            //if (sqlCastExpression.OperatorType == ExpressionType.Not)
+            //{
+                _canOptimize = canOptimize;
+            //}
+
+            return sqlCastExpression.Update(newOperand);
+        }
+
+        protected override Expression VisitSubSelect(ScalarSubqueryExpression scalarSubqueryExpression)
+        {
+            var canOptimize = _canOptimize;
+            var subquery = (SelectExpression)Visit(scalarSubqueryExpression.Subquery);
+            _canOptimize = canOptimize;
+
+            return scalarSubqueryExpression.Update(subquery);
+        }
+
+        protected override Expression VisitTable(TableExpression tableExpression)
+            => tableExpression;
+
+        protected override Expression VisitUnion(UnionExpression unionExpression)
+        {
+            var canOptimize = _canOptimize;
+            _canOptimize = false;
+            var source1 = (SelectExpression)Visit(unionExpression.Source1);
+            var source2 = (SelectExpression)Visit(unionExpression.Source2);
+            _canOptimize = canOptimize;
+
+            return unionExpression.Update(source1, source2);
         }
 
         private List<ColumnExpression> FindNonNullableColumns(SqlExpression sqlExpression)

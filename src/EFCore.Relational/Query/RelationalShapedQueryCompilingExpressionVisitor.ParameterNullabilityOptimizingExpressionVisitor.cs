@@ -88,6 +88,33 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 return result;
             }
+
+            protected override Expression VisitSqlBinaryExpression(SqlBinaryExpression sqlBinaryExpression)
+            {
+                var result = base.VisitSqlBinaryExpression(sqlBinaryExpression);
+                if (result is SqlBinaryExpression sqlBinaryResult)
+                {
+                    var leftNullParameter = sqlBinaryResult.Left is SqlParameterExpression leftParameter
+                        && _parametersValues[leftParameter.Name] == null;
+
+                    var rightNullParameter = sqlBinaryResult.Right is SqlParameterExpression rightParameter
+                        && _parametersValues[rightParameter.Name] == null;
+
+                    if ((sqlBinaryResult.OperatorType == ExpressionType.Equal || sqlBinaryResult.OperatorType == ExpressionType.NotEqual)
+                        && (leftNullParameter || rightNullParameter))
+                    {
+                        return SimplifyNullComparisonExpression(
+                            sqlBinaryResult.OperatorType,
+                            sqlBinaryResult.Left,
+                            sqlBinaryResult.Right,
+                            leftNullParameter,
+                            rightNullParameter,
+                            sqlBinaryResult.TypeMapping);
+                    }
+                }
+
+                return result;
+            }
         }
     }
 }

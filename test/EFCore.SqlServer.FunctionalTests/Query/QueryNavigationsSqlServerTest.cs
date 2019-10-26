@@ -463,7 +463,7 @@ FROM [Order Details] AS [o]
 INNER JOIN [Orders] AS [o0] ON [o].[OrderID] = [o0].[OrderID]
 LEFT JOIN [Customers] AS [c] ON [o0].[CustomerID] = [c].[CustomerID]
 LEFT JOIN [Orders] AS [o1] ON [c].[CustomerID] = [o1].[CustomerID]
-WHERE (([o0].[CustomerID] = N'ALFKI') AND [o0].[CustomerID] IS NOT NULL) OR (([o0].[CustomerID] = N'ANTON') AND [o0].[CustomerID] IS NOT NULL)
+WHERE ([o0].[CustomerID] = N'ALFKI') OR ([o0].[CustomerID] = N'ANTON')
 ORDER BY [o].[OrderID], [o].[ProductID], [o0].[OrderID], [o1].[OrderID]");
         }
 
@@ -726,7 +726,7 @@ ORDER BY [c].[CustomerID]");
     SELECT TOP(1) [c].[City]
     FROM [Orders] AS [o]
     LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
-    WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL)
+    WHERE [o].[CustomerID] = N'ALFKI')
 FROM [Customers] AS [c0]
 WHERE [c0].[CustomerID] LIKE N'A%'");
         }

@@ -1642,7 +1642,7 @@ SELECT TOP(@__p_0) [l].[Name]
 FROM [LevelTwo] AS [l]
 INNER JOIN [LevelOne] AS [l0] ON [l].[Level1_Required_Id] = [l0].[Id]
 INNER JOIN [LevelThree] AS [l1] ON [l0].[Id] = [l1].[Level2_Required_Id]
-WHERE (([l0].[Name] = N'L1 03') AND [l0].[Name] IS NOT NULL) AND (([l1].[Name] = N'L3 08') AND [l1].[Name] IS NOT NULL)
+WHERE ([l0].[Name] = N'L1 03') AND ([l1].[Name] = N'L3 08')
 ORDER BY [l0].[Id]");
         }
 
@@ -2959,7 +2959,7 @@ WHERE [l0].[Id] = [l0].[Id]");
 FROM [LevelTwo] AS [l]
 INNER JOIN [LevelOne] AS [l0] ON [l].[OneToMany_Required_Inverse2Id] = [l0].[Id]
 LEFT JOIN [LevelOne] AS [l1] ON [l].[OneToOne_Optional_PK_Inverse2Id] = [l1].[Id]
-WHERE ([l0].[Id] = [l1].[Id]) AND [l1].[Id] IS NOT NULL");
+WHERE [l0].[Id] = [l1].[Id]");
         }
 
         public override async Task Navigations_compared_to_each_other3(bool isAsync)

@@ -163,7 +163,7 @@ WHERE ([t0].[Nickname] = N'Marcus') AND [t0].[Nickname] IS NOT NULL");
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank], [c].[Name], [c].[Location], [c].[Nation]
 FROM [Gears] AS [g]
-INNER JOIN [Tags] AS [t] ON (([g].[SquadId] = [t].[GearSquadId]) AND [t].[GearSquadId] IS NOT NULL) AND (([g].[Nickname] = [t].[GearNickName]) AND [t].[GearNickName] IS NOT NULL)
+INNER JOIN [Tags] AS [t] ON ([g].[SquadId] = [t].[GearSquadId]) AND ([g].[Nickname] = [t].[GearNickName])
 INNER JOIN [Cities] AS [c] ON [g].[CityOfBirthName] = [c].[Name]
 WHERE [g].[Discriminator] IN (N'Gear', N'Officer')");
         }
@@ -374,7 +374,7 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ([g].[Rank] = 2)");
             AssertSql(
                 @"SELECT [w].[Id], [w].[AmmunitionType], [w].[IsAutomatic], [w].[Name], [w].[OwnerFullName], [w].[SynergyWithId]
 FROM [Weapons] AS [w]
-WHERE ([w].[AmmunitionType] = 1) AND [w].[AmmunitionType] IS NOT NULL");
+WHERE [w].[AmmunitionType] = 1");
         }
 
         public override async Task Where_nullable_enum_with_null_constant(bool isAsync)
@@ -4649,7 +4649,7 @@ FROM [Gears] AS [g]
 OUTER APPLY (
     SELECT [g0].[FullName], [g0].[Nickname], [g0].[SquadId]
     FROM [Gears] AS [g0]
-    WHERE ([g0].[Discriminator] IN (N'Gear', N'Officer') AND ([g].[FullName] <> N'Foo')) AND ((([g].[Nickname] = [g0].[LeaderNickname]) AND [g0].[LeaderNickname] IS NOT NULL) AND ([g].[SquadId] = [g0].[LeaderSquadId]))
+    WHERE ([g0].[Discriminator] IN (N'Gear', N'Officer') AND ([g].[FullName] <> N'Foo')) AND (([g].[Nickname] = [g0].[LeaderNickname]) AND ([g].[SquadId] = [g0].[LeaderSquadId]))
 ) AS [t]
 WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ([g].[Discriminator] = N'Officer')
 ORDER BY [g].[Nickname], [g].[SquadId], [t].[Nickname], [t].[SquadId]");
@@ -5943,7 +5943,7 @@ LEFT JOIN (
     SELECT [g0].[Nickname], [g0].[SquadId], [g0].[AssignedCityName], [g0].[CityOfBirthName], [g0].[Discriminator], [g0].[FullName], [g0].[HasSoulPatch], [g0].[LeaderNickname], [g0].[LeaderSquadId], [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
-) AS [t] ON (([g].[Nickname] = [t].[LeaderNickname]) AND [t].[LeaderNickname] IS NOT NULL) AND ([g].[SquadId] = [t].[LeaderSquadId])
+) AS [t] ON ([g].[Nickname] = [t].[LeaderNickname]) AND ([g].[SquadId] = [t].[LeaderSquadId])
 WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ([g].[Discriminator] = N'Officer')
 ORDER BY (
     SELECT TOP(1) [w].[IsAutomatic]
