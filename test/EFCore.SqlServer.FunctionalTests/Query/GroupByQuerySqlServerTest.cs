@@ -1255,7 +1255,7 @@ ORDER BY [o].[CustomerID]");
                 @"SELECT [o].[CustomerID] AS [Key], COUNT(*) AS [c]
 FROM [Orders] AS [o]
 GROUP BY [o].[CustomerID]
-HAVING ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
+HAVING [o].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task GroupBy_filter_count(bool isAsync)

@@ -1081,7 +1081,7 @@ SELECT CASE
     WHEN @__entity_equality_p_0_OrderID IN (
         SELECT [o].[OrderID]
         FROM [Orders] AS [o]
-        WHERE ([o].[CustomerID] = N'VINET') AND [o].[CustomerID] IS NOT NULL
+        WHERE [o].[CustomerID] = N'VINET'
     )
      THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)

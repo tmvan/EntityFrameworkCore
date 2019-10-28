@@ -255,7 +255,7 @@ WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL");
             AssertSql(
                 @"SELECT [c].[City]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'London'");
         }
 
         public override async Task Select_nested_collection(bool isAsync)
@@ -995,7 +995,7 @@ FROM [Customers] AS [c]
 CROSS APPLY (
     SELECT [c].[City], [o].[OrderID], [o].[CustomerID]
     FROM [Orders] AS [o]
-    WHERE ([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL
+    WHERE [c].[CustomerID] = [o].[CustomerID]
 ) AS [t]");
         }
 
@@ -1104,7 +1104,7 @@ FROM [Customers] AS [c]
 CROSS APPLY (
     SELECT [o].[CustomerID], [c].[CustomerID] AS [CustomerID0], [o].[OrderID]
     FROM [Orders] AS [o]
-    WHERE ([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL
+    WHERE [c].[CustomerID] = [o].[CustomerID]
 ) AS [t]");
         }
 

@@ -165,13 +165,13 @@ WHERE CAST([e].[EmployeeID] AS bigint) > @__p_0");
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = @__GetCity_0) AND [c].[City] IS NOT NULL",
+WHERE [c].[City] = @__GetCity_0",
                 //
                 @"@__GetCity_0='Seattle' (Size = 4000)
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = @__GetCity_0) AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = @__GetCity_0");
         }
 
         public override async Task Where_field_access_closure_via_query_cache(bool isAsync)
@@ -291,13 +291,13 @@ WHERE ([c].[City] = @__city_Nested_InstancePropertyValue_0) AND [c].[City] IS NO
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = @__InstanceFieldValue_0) AND [c].[City] IS NOT NULL",
+WHERE [c].[City] = @__InstanceFieldValue_0",
                 //
                 @"@__InstanceFieldValue_0='Seattle' (Size = 4000)
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = @__InstanceFieldValue_0) AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = @__InstanceFieldValue_0");
         }
 
         public override async Task Where_new_instance_field_access_closure_via_query_cache(bool isAsync)
@@ -741,7 +741,7 @@ WHERE (CONVERT(date, [o].[OrderDate]) = @__myDatetime_0) AND CONVERT(date, [o].[
             AssertSql(
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (DATEPART(year, DATEADD(year, CAST(-1 AS int), [o].[OrderDate])) = 1997) AND DATEPART(year, DATEADD(year, CAST(-1 AS int), [o].[OrderDate])) IS NOT NULL");
+WHERE DATEPART(year, DATEADD(year, CAST(-1 AS int), [o].[OrderDate])) = 1997");
         }
 
         public override async Task Where_datetime_year_component(bool isAsync)
@@ -821,7 +821,7 @@ WHERE (DATEPART(second, [o].[OrderDate]) = 44) AND DATEPART(second, [o].[OrderDa
             AssertSql(
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (DATEPART(millisecond, [o].[OrderDate]) = 88) AND DATEPART(millisecond, [o].[OrderDate]) IS NOT NULL");
+WHERE DATEPART(millisecond, [o].[OrderDate]) = 88");
         }
 
         public override async Task Where_datetimeoffset_now_component(bool isAsync)
@@ -987,7 +987,7 @@ WHERE (((([c].[City] <> N'London') OR [c].[City] IS NULL) AND (([c].[City] <> N'
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Customers] AS [c]
 CROSS JOIN [Employees] AS [e]
-WHERE ((([c].[City] = N'London') AND [c].[City] IS NOT NULL) AND (([c].[Country] = N'UK') AND [c].[Country] IS NOT NULL)) AND ((([e].[City] = N'London') AND [e].[City] IS NOT NULL) AND (([e].[Country] = N'UK') AND [e].[Country] IS NOT NULL))");
+WHERE (([c].[City] = N'London') AND ([c].[Country] = N'UK')) AND (([e].[City] = N'London') AND ([e].[Country] = N'UK'))");
         }
 
         public override async Task Where_primitive(bool isAsync)
@@ -1280,7 +1280,7 @@ WHERE [c].[CustomerID] = N'ALFKI'");
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
 LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
-WHERE ([c].[CustomerID] = N'ALFKI') AND [c].[CustomerID] IS NOT NULL");
+WHERE [c].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Where_concat_string_int_comparison1(bool isAsync)

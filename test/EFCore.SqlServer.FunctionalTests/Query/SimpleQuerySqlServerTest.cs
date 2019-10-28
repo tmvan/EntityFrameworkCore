@@ -491,13 +491,10 @@ ORDER BY [t].[EmployeeID]");
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] = [e].[ReportsTo]) AND [e].[ReportsTo] IS NOT NULL) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] = [e].[ReportsTo]) AND [e].[ReportsTo] IS NOT NULL) IS NOT NULL");
+    WHERE [e0].[EmployeeID] = [e].[ReportsTo]) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_one_element_Single(bool isAsync)
@@ -636,13 +633,10 @@ WHERE (
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) IS NOT NULL");
+    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_multiple_elements_FirstOrDefault(bool isAsync)
@@ -940,10 +934,10 @@ ORDER BY [c].[CustomerID]");
     WHEN EXISTS (
         SELECT 1
         FROM [Orders] AS [o]
-        WHERE ([o].[CustomerID] = [c].[CustomerID]) AND [o].[CustomerID] IS NOT NULL) THEN CAST(1 AS bit)
+        WHERE [o].[CustomerID] = [c].[CustomerID]) THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)
 END AS [hasOrders]
-FROM [Customers] AS [c]
+FROM [Customers] AS [c]Select_Where_Navigation_Deep
 WHERE [c].[CustomerID] LIKE N'A%'
 ORDER BY [c].[CustomerID]");
         }
@@ -3694,7 +3688,7 @@ WHERE [t].[CustomerID] LIKE N'A%'");
             AssertSql(
                 @"SELECT DISTINCT [c].[CustomerID] + [c].[City] AS [A]
 FROM [Customers] AS [c]
-WHERE (([c].[CustomerID] + [c].[City]) = N'ALFKIBerlin') AND [c].[City] IS NOT NULL");
+WHERE ([c].[CustomerID] + [c].[City]) = N'ALFKIBerlin'");
         }
 
         public override async Task Anonymous_complex_distinct_orderby(bool isAsync)

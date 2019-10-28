@@ -238,7 +238,7 @@ FROM (
     SELECT *
     FROM ""Customers""
 ) AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'London'");
         }
 
         public override void FromSqlRaw_queryable_with_parameters()

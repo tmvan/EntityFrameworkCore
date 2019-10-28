@@ -30,7 +30,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                 @"SELECT [l].[Id], [l].[Date], [l].[Name], [l].[OneToMany_Optional_Self_Inverse1Id], [l].[OneToMany_Required_Self_Inverse1Id], [l].[OneToOne_Optional_Self1Id]
 FROM [LevelOne] AS [l]
 LEFT JOIN [LevelTwo] AS [l0] ON [l].[Id] = [l0].[Level1_Optional_Id]
-WHERE ([l0].[Id] = 0) AND [l0].[Id] IS NOT NULL");
+WHERE [l0].[Id] = 0");
         }
 
         public override async Task Key_equality_when_sentinel_ef_property(bool isAsync)
@@ -96,7 +96,7 @@ WHERE [l0].[Id] = 7");
                 @"SELECT [l].[Id], [l].[Date], [l].[Name], [l].[OneToMany_Optional_Self_Inverse1Id], [l].[OneToMany_Required_Self_Inverse1Id], [l].[OneToOne_Optional_Self1Id]
 FROM [LevelOne] AS [l]
 LEFT JOIN [LevelTwo] AS [l0] ON [l].[Id] = [l0].[Level1_Required_Id]
-WHERE ([l0].[Id] = 7) AND [l0].[Id] IS NOT NULL");
+WHERE [l0].[Id] = 7");
         }
 
         public override async Task Key_equality_using_property_method_and_member_expression2(bool isAsync)
@@ -107,7 +107,7 @@ WHERE ([l0].[Id] = 7) AND [l0].[Id] IS NOT NULL");
                 @"SELECT [l].[Id], [l].[Date], [l].[Name], [l].[OneToMany_Optional_Self_Inverse1Id], [l].[OneToMany_Required_Self_Inverse1Id], [l].[OneToOne_Optional_Self1Id]
 FROM [LevelOne] AS [l]
 LEFT JOIN [LevelTwo] AS [l0] ON [l].[Id] = [l0].[Level1_Required_Id]
-WHERE ([l0].[Id] = 7) AND [l0].[Id] IS NOT NULL");
+WHERE [l0].[Id] = 7");
         }
 
         public override async Task Key_equality_using_property_method_and_member_expression3(bool isAsync)
@@ -842,7 +842,7 @@ WHERE [l].[Id] = [l0].[Id]");
 FROM [LevelOne] AS [l]
 CROSS JOIN [LevelTwo] AS [l0]
 LEFT JOIN [LevelOne] AS [l1] ON [l0].[Level1_Optional_Id] = [l1].[Id]
-WHERE ([l].[Id] = [l1].[Id]) AND [l1].[Id] IS NOT NULL");
+WHERE [l].[Id] = [l1].[Id]");
         }
 
         public override async Task SelectMany_navigation_comparison3(bool isAsync)
@@ -879,7 +879,7 @@ WHERE (([l1].[Name] = N'L2 01') AND [l1].[Name] IS NOT NULL) OR (([l2].[Name] <>
 FROM [LevelOne] AS [l]
 LEFT JOIN [LevelTwo] AS [l0] ON [l].[Id] = [l0].[Level1_Optional_Id]
 LEFT JOIN [LevelThree] AS [l1] ON [l0].[Id] = [l1].[Level2_Required_Id]
-WHERE (([l1].[Name] = N'L3 05') AND [l1].[Name] IS NOT NULL) OR (([l0].[Name] <> N'L2 05') OR [l0].[Name] IS NULL)");
+WHERE ([l1].[Name] = N'L3 05') OR (([l0].[Name] <> N'L2 05') OR [l0].[Name] IS NULL)");
         }
 
         public override async Task Where_complex_predicate_with_with_nav_prop_and_OrElse3(bool isAsync)

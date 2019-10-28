@@ -116,7 +116,7 @@ INNER JOIN (
     FROM [Orders] AS [o]
     ORDER BY [o].[OrderID]
 ) AS [t] ON [c].[CustomerID] = [t].[CustomerID]
-WHERE ([t].[CustomerID] = N'ALFKI') AND [t].[CustomerID] IS NOT NULL");
+WHERE [t].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Join_customers_orders_with_subquery_anonymous_property_method(bool isAsync)
@@ -162,7 +162,7 @@ INNER JOIN (
     FROM [Orders] AS [o]
     WHERE [o].[OrderID] > 0
 ) AS [t] ON [c].[CustomerID] = [t].[CustomerID]
-WHERE ([t].[CustomerID] = N'ALFKI') AND [t].[CustomerID] IS NOT NULL");
+WHERE [t].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Join_customers_orders_with_subquery_predicate_with_take(bool isAsync)

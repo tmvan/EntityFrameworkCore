@@ -115,7 +115,7 @@ WHERE CHARINDEX(@__prm8_0, [f].[FirstName]) <= 0");
                 @"SELECT [f].[FirstName] AS [fn], [f0].[LastName] AS [ln]
 FROM [FunkyCustomers] AS [f]
 CROSS JOIN [FunkyCustomers] AS [f0]
-WHERE (([f0].[LastName] = N'') AND [f0].[LastName] IS NOT NULL) OR (CHARINDEX([f0].[LastName], [f].[FirstName]) > 0)");
+WHERE ([f0].[LastName] = N'') OR (CHARINDEX([f0].[LastName], [f].[FirstName]) > 0)");
         }
 
         public override async Task String_contains_on_argument_with_wildcard_column_negated(bool isAsync)
@@ -253,7 +253,7 @@ WHERE (@__prm3_0 = N'') OR ([f].[FirstName] IS NOT NULL AND ((LEFT([f].[FirstNam
                 //
                 @"SELECT [f].[Id], [f].[FirstName], [f].[LastName], [f].[NullableBool]
 FROM [FunkyCustomers] AS [f]
-WHERE (([f].[LastName] = N'') AND [f].[LastName] IS NOT NULL) OR ([f].[FirstName] IS NOT NULL AND ([f].[LastName] IS NOT NULL AND (LEFT([f].[FirstName], LEN([f].[LastName])) = [f].[LastName])))");
+WHERE ([f].[LastName] = N'') OR ([f].[FirstName] IS NOT NULL AND ([f].[LastName] IS NOT NULL AND ((LEFT([f].[FirstName], LEN([f].[LastName])) = [f].[LastName]) AND LEFT([f].[FirstName], LEN([f].[LastName])) IS NOT NULL)))");
         }
 
         public override async Task String_starts_with_on_argument_with_wildcard_column(bool isAsync)
