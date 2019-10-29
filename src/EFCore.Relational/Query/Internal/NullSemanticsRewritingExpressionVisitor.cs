@@ -292,6 +292,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             _canOptimize = canOptimize;
 
+            // we assume SelectExpression can always be null
+            // (e.g. projecting non-nullable column but with predicate that filters out all rows)
+            _isNullable = true;
+
             return changed
                 ? selectExpression.Update(
                     projections, tables, predicate, groupBy, havingExpression, orderings, limit, offset, selectExpression.IsDistinct,

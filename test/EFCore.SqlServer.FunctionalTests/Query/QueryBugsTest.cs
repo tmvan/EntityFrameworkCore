@@ -104,7 +104,7 @@ WHERE ((([d].[DateTime2_2] = GETDATE()) OR ([d].[DateTime2_7] = GETDATE())) OR (
                     AssertSql(
                         @"SELECT [d].[Id], [d].[DateTime], [d].[DateTime2], [d].[DateTime2_0], [d].[DateTime2_1], [d].[DateTime2_2], [d].[DateTime2_3], [d].[DateTime2_4], [d].[DateTime2_5], [d].[DateTime2_6], [d].[DateTime2_7], [d].[SmallDateTime]
 FROM [Dates] AS [d]
-WHERE ((([d].[DateTime2_2] <> GETDATE()) AND ([d].[DateTime2_7] <> GETDATE())) AND ([d].[DateTime] <> GETDATE())) AND ([d].[SmallDateTime] <> GETDATE())");
+WHERE (((([d].[DateTime2_2] <> GETDATE()) OR GETDATE() IS NULL) AND (([d].[DateTime2_7] <> GETDATE()) OR GETDATE() IS NULL)) AND (([d].[DateTime] <> GETDATE()) OR GETDATE() IS NULL)) AND (([d].[SmallDateTime] <> GETDATE()) OR GETDATE() IS NULL)");
                 }
             }
         }
@@ -589,7 +589,7 @@ INSERT [dbo].[Postcodes] ([PostcodeID], [PostcodeValue], [TownName]) VALUES (5, 
                     AssertSql(
                         @"SELECT [c].[FirstName], [c].[LastName], [o].[Id], [o].[CustomerFirstName], [o].[CustomerLastName], [o].[Name]
 FROM [Customer] AS [c]
-LEFT JOIN [Order] AS [o] ON (([c].[FirstName] = [o].[CustomerFirstName]) AND [o].[CustomerFirstName] IS NOT NULL) AND (([c].[LastName] = [o].[CustomerLastName]) AND [o].[CustomerLastName] IS NOT NULL)
+LEFT JOIN [Order] AS [o] ON ([c].[FirstName] = [o].[CustomerFirstName]) AND ([c].[LastName] = [o].[CustomerLastName])
 ORDER BY [c].[FirstName], [c].[LastName], [o].[Id]");
                 }
             }
@@ -615,7 +615,7 @@ ORDER BY [c].[FirstName], [c].[LastName], [o].[Id]");
                     AssertSql(
                         @"SELECT [o].[Id], [o].[CustomerFirstName], [o].[CustomerLastName], [o].[Name], [c].[FirstName], [c].[LastName]
 FROM [Order] AS [o]
-LEFT JOIN [Customer] AS [c] ON (([o].[CustomerFirstName] = [c].[FirstName]) AND [o].[CustomerFirstName] IS NOT NULL) AND (([o].[CustomerLastName] = [c].[LastName]) AND [o].[CustomerLastName] IS NOT NULL)");
+LEFT JOIN [Customer] AS [c] ON ([o].[CustomerFirstName] = [c].[FirstName]) AND ([o].[CustomerLastName] = [c].[LastName])");
                 }
             }
         }
@@ -2372,7 +2372,7 @@ WHERE [e].[Id] IN (
 
 SELECT [e].[Id], [e].[Name]
 FROM [Entities] AS [e]
-WHERE ([e].[Name] = @__name_0) AND [e].[Name] IS NOT NULL",
+WHERE [e].[Name] = @__name_0",
                         //
                         @"SELECT [e].[Id], [e].[Name]
 FROM [Entities] AS [e]
@@ -5973,7 +5973,7 @@ WHERE [p].[Id] = @__id_0");
                     AssertSql(
                         @"SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
+WHERE [f].[String] = N'1337'");
                 }
             }
         }
@@ -6036,7 +6036,7 @@ WHERE [f].[String] = @__ToString_0");
 
 SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE ([f].[String] = @__p_0) AND [f].[String] IS NOT NULL");
+WHERE [f].[String] = @__p_0");
                 }
             }
         }
@@ -6054,7 +6054,7 @@ WHERE ([f].[String] = @__p_0) AND [f].[String] IS NOT NULL");
                     AssertSql(
                         @"SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
+WHERE [f].[String] = N'1337'");
                 }
             }
         }
@@ -6712,13 +6712,10 @@ OUTER APPLY (
     SELECT [a1].[Id], [a1].[ActivityTypeId], [a1].[CompetitionSeasonId], [a1].[Points], [c0].[Id] AS [Id0]
     FROM [ActivityTypePoints12456] AS [a1]
     INNER JOIN [CompetitionSeasons] AS [c0] ON [a1].[CompetitionSeasonId] = [c0].[Id]
-    WHERE (([c0].[Id] = (
+    WHERE ([c0].[Id] = (
         SELECT TOP(1) [c1].[Id]
         FROM [CompetitionSeasons] AS [c1]
-        WHERE ([c1].[StartDate] <= [a].[DateTime]) AND ([a].[DateTime] < [c1].[EndDate]))) AND (
-        SELECT TOP(1) [c1].[Id]
-        FROM [CompetitionSeasons] AS [c1]
-        WHERE ([c1].[StartDate] <= [a].[DateTime]) AND ([a].[DateTime] < [c1].[EndDate])) IS NOT NULL) AND ([a0].[Id] = [a1].[ActivityTypeId])
+        WHERE ([c1].[StartDate] <= [a].[DateTime]) AND ([a].[DateTime] < [c1].[EndDate]))) AND ([a0].[Id] = [a1].[ActivityTypeId])
 ) AS [t]
 ORDER BY [a].[Id], [a0].[Id], [t].[Id], [t].[Id0]");
                 }
@@ -6756,13 +6753,10 @@ ORDER BY [a].[Id], [a0].[Id], [t].[Id], [t].[Id0]");
     SELECT TOP(1) [a].[Points]
     FROM [ActivityTypePoints12456] AS [a]
     INNER JOIN [CompetitionSeasons] AS [c0] ON [a].[CompetitionSeasonId] = [c0].[Id]
-    WHERE ([a1].[Id] = [a].[ActivityTypeId]) AND (([c0].[Id] = (
+    WHERE ([a1].[Id] = [a].[ActivityTypeId]) AND ([c0].[Id] = (
         SELECT TOP(1) [c1].[Id]
         FROM [CompetitionSeasons] AS [c1]
-        WHERE ([c1].[StartDate] <= [a0].[DateTime]) AND ([a0].[DateTime] < [c1].[EndDate]))) AND (
-        SELECT TOP(1) [c1].[Id]
-        FROM [CompetitionSeasons] AS [c1]
-        WHERE ([c1].[StartDate] <= [a0].[DateTime]) AND ([a0].[DateTime] < [c1].[EndDate])) IS NOT NULL))) AS [Points]
+        WHERE ([c1].[StartDate] <= [a0].[DateTime]) AND ([a0].[DateTime] < [c1].[EndDate]))))) AS [Points]
 FROM [Activities] AS [a0]
 INNER JOIN [ActivityType12456] AS [a1] ON [a0].[ActivityTypeId] = [a1].[Id]");
                 }

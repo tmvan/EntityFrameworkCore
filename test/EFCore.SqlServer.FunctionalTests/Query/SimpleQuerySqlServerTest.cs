@@ -458,7 +458,7 @@ FROM (
 WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] = [t].[ReportsTo]) AND [t].[ReportsTo] IS NOT NULL) IS NULL
+    WHERE [e0].[EmployeeID] = [t].[ReportsTo]) IS NULL
 ORDER BY [t].[EmployeeID]");
         }
 
@@ -480,7 +480,7 @@ FROM (
 WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] = [t].[ReportsTo]) AND [t].[ReportsTo] IS NOT NULL) IS NOT NULL
+    WHERE [e0].[EmployeeID] = [t].[ReportsTo]) IS NOT NULL
 ORDER BY [t].[EmployeeID]");
         }
 
@@ -517,13 +517,10 @@ WHERE (
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] = [e].[ReportsTo]) AND [e].[ReportsTo] IS NOT NULL) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] = [e].[ReportsTo]) AND [e].[ReportsTo] IS NOT NULL) IS NOT NULL");
+    WHERE [e0].[EmployeeID] = [e].[ReportsTo]) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_one_element_First(bool isAsync)
@@ -546,13 +543,10 @@ WHERE (
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE [e0].[EmployeeID] = 42) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE [e0].[EmployeeID] = 42) IS NOT NULL");
+    WHERE [e0].[EmployeeID] = 42) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_no_elements_Single(bool isAsync)
@@ -562,13 +556,10 @@ WHERE ((
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE [e0].[EmployeeID] = 42) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE [e0].[EmployeeID] = 42) IS NOT NULL");
+    WHERE [e0].[EmployeeID] = 42) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_no_elements_FirstOrDefault(bool isAsync)
@@ -604,13 +595,10 @@ WHERE (
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE [e0].[EmployeeID] = 42) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE [e0].[EmployeeID] = 42) IS NOT NULL");
+    WHERE [e0].[EmployeeID] = 42) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_multiple_elements_SingleOrDefault(bool isAsync)
@@ -646,13 +634,10 @@ WHERE (
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) IS NOT NULL");
+    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) = 0");
         }
 
         public override async Task Where_query_composition_entity_equality_multiple_elements_First(bool isAsync)
@@ -662,13 +647,10 @@ WHERE ((
             AssertSql(
                 @"SELECT [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Employees] AS [e]
-WHERE ((
+WHERE (
     SELECT TOP(1) [e0].[EmployeeID]
     FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) = 0) AND (
-    SELECT TOP(1) [e0].[EmployeeID]
-    FROM [Employees] AS [e0]
-    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) IS NOT NULL");
+    WHERE ([e0].[EmployeeID] <> [e].[ReportsTo]) OR [e].[ReportsTo] IS NULL) = 0");
         }
 
         public override async Task Where_query_composition2(bool isAsync)
@@ -794,19 +776,13 @@ WHERE ([o].[OrderID] = 10344) AND (((
 
 SELECT TOP(@__p_0) [o].[OrderID], [o].[ProductID], [o].[Discount], [o].[Quantity], [o].[UnitPrice]
 FROM [Order Details] AS [o]
-WHERE ((
+WHERE (
     SELECT TOP(1) (
         SELECT TOP(1) [c].[City]
         FROM [Customers] AS [c]
-        WHERE ([o0].[CustomerID] = [c].[CustomerID]) AND [o0].[CustomerID] IS NOT NULL)
+        WHERE [o0].[CustomerID] = [c].[CustomerID])
     FROM [Orders] AS [o0]
-    WHERE [o].[OrderID] = [o0].[OrderID]) = N'Seattle') AND (
-    SELECT TOP(1) (
-        SELECT TOP(1) [c].[City]
-        FROM [Customers] AS [c]
-        WHERE ([o0].[CustomerID] = [c].[CustomerID]) AND [o0].[CustomerID] IS NOT NULL)
-    FROM [Orders] AS [o0]
-    WHERE [o].[OrderID] = [o0].[OrderID]) IS NOT NULL");
+    WHERE [o].[OrderID] = [o0].[OrderID]) = N'Seattle'");
         }
 
         public override void Select_Where_Subquery_Equality()
@@ -878,7 +854,7 @@ CROSS JOIN (
     FROM [Orders] AS [o]
     ORDER BY [o].[OrderID]
 ) AS [t0]
-WHERE ([t].[EmployeeID] = [t0].[EmployeeID]) AND [t0].[EmployeeID] IS NOT NULL
+WHERE [t].[EmployeeID] = [t0].[EmployeeID]
 ORDER BY [t].[EmployeeID]");
         }
 
@@ -1517,7 +1493,7 @@ WHERE ([c].[City] = N'London') AND EXISTS (
     WHEN NOT EXISTS (
         SELECT 1
         FROM [Customers] AS [c]
-        WHERE (([c].[ContactName] <> N'') OR [c].[ContactName] IS NULL) AND ([c].[ContactName] IS NULL OR (LEFT([c].[ContactName], LEN([c].[ContactName])) <> [c].[ContactName]))) THEN CAST(1 AS bit)
+        WHERE ([c].[ContactName] <> N'') AND ([c].[ContactName] IS NULL OR ((LEFT([c].[ContactName], LEN([c].[ContactName])) <> [c].[ContactName]) OR LEFT([c].[ContactName], LEN([c].[ContactName])) IS NULL))) THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)
 END");
         }
@@ -1570,7 +1546,7 @@ END");
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [e].[EmployeeID], [e].[City], [e].[Country], [e].[FirstName], [e].[ReportsTo], [e].[Title]
 FROM [Customers] AS [c]
 CROSS JOIN [Employees] AS [e]
-WHERE (([c].[City] = N'London') AND [c].[City] IS NOT NULL) OR (([e].[City] = N'London') AND [e].[City] IS NOT NULL)");
+WHERE ([c].[City] = N'London') OR ([e].[City] = N'London')");
         }
 
         public override async Task Where_select_many_or2(bool isAsync)
@@ -2636,7 +2612,7 @@ FROM [Customers] AS [c]");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (COALESCE([c].[CompanyName], [c].[ContactName]) = N'The Big Cheese') AND ([c].[CompanyName] IS NOT NULL OR [c].[ContactName] IS NOT NULL)");
+WHERE COALESCE([c].[CompanyName], [c].[ContactName]) = N'The Big Cheese'");
         }
 
         [SqlServerCondition(SqlServerCondition.SupportsOffset)]
@@ -3035,7 +3011,7 @@ WHERE [o].[OrderID] < 10400");
 
 SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE ([o].[OrderID] < 10400) AND (([o].[OrderDate] IS NOT NULL AND ((DATEPART(month, [o].[OrderDate]) = @__dateFilter_Value_Month_0) AND DATEPART(month, [o].[OrderDate]) IS NOT NULL)) AND ((DATEPART(year, [o].[OrderDate]) = @__dateFilter_Value_Year_1) AND DATEPART(year, [o].[OrderDate]) IS NOT NULL))",
+WHERE ([o].[OrderID] < 10400) AND (([o].[OrderDate] IS NOT NULL AND (DATEPART(month, [o].[OrderDate]) = @__dateFilter_Value_Month_0)) AND (DATEPART(year, [o].[OrderDate]) = @__dateFilter_Value_Year_1))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
@@ -3052,7 +3028,7 @@ WHERE CAST(0 AS bit) = CAST(1 AS bit)");
 
 SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE ([o].[OrderID] < 10400) OR (([o].[OrderDate] IS NOT NULL AND ((DATEPART(month, [o].[OrderDate]) = @__dateFilter_Value_Month_0) AND DATEPART(month, [o].[OrderDate]) IS NOT NULL)) AND ((DATEPART(year, [o].[OrderDate]) = @__dateFilter_Value_Year_1) AND DATEPART(year, [o].[OrderDate]) IS NOT NULL))",
+WHERE ([o].[OrderID] < 10400) OR (([o].[OrderDate] IS NOT NULL AND (DATEPART(month, [o].[OrderDate]) = @__dateFilter_Value_Month_0)) AND (DATEPART(year, [o].[OrderDate]) = @__dateFilter_Value_Year_1))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]");
@@ -3090,7 +3066,7 @@ ORDER BY (
 SELECT [t].[OrderID] AS [OrderId], (
     SELECT TOP(1) [c].[City]
     FROM [Customers] AS [c]
-    WHERE ([c].[CustomerID] = [t].[CustomerID]) AND [t].[CustomerID] IS NOT NULL) AS [City]
+    WHERE [c].[CustomerID] = [t].[CustomerID]) AS [City]
 FROM (
     SELECT TOP(@__p_0) [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
     FROM [Orders] AS [o]
@@ -3099,7 +3075,7 @@ FROM (
 ORDER BY (
     SELECT TOP(1) [c0].[City]
     FROM [Customers] AS [c0]
-    WHERE ([c0].[CustomerID] = [t].[CustomerID]) AND [t].[CustomerID] IS NOT NULL)");
+    WHERE [c0].[CustomerID] = [t].[CustomerID])");
         }
 
         public override async Task Query_expression_with_to_string_and_contains(bool isAsync)
@@ -3262,7 +3238,7 @@ FROM (
 LEFT JOIN (
     SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
     FROM [Customers] AS [c]
-    WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL
+    WHERE [c].[City] = N'London'
 ) AS [t] ON 1 = 1
 WHERE [t].[CustomerID] IS NOT NULL");
         }
@@ -3317,7 +3293,7 @@ CROSS JOIN (
     ) AS [t] ON 1 = 1
 ) AS [t0]
 LEFT JOIN [Orders] AS [o0] ON [c].[CustomerID] = [o0].[CustomerID]
-WHERE (([c].[City] = N'Seattle') AND [c].[City] IS NOT NULL) AND ([t0].[OrderID] IS NOT NULL AND [o0].[OrderID] IS NOT NULL)
+WHERE ([c].[City] = N'Seattle') AND ([t0].[OrderID] IS NOT NULL AND [o0].[OrderID] IS NOT NULL)
 ORDER BY [t0].[OrderID], [o0].[OrderDate]");
         }
 
@@ -3604,7 +3580,7 @@ WHERE ([o].[OrderID] > 11000) AND [o].[OrderID] IN (
     SELECT [o0].[OrderID]
     FROM [Order Details] AS [o0]
     INNER JOIN [Products] AS [p] ON [o0].[ProductID] = [p].[ProductID]
-    WHERE ([p].[ProductName] = N'Chai') AND [p].[ProductName] IS NOT NULL
+    WHERE [p].[ProductName] = N'Chai'
 )");
         }
 
@@ -3792,7 +3768,7 @@ WHERE [t].[CustomerID] LIKE N'A%'");
             AssertSql(
                 @"SELECT DISTINCT [c].[CustomerID] + [c].[City] AS [Property]
 FROM [Customers] AS [c]
-WHERE (([c].[CustomerID] + [c].[City]) = N'ALFKIBerlin') AND [c].[City] IS NOT NULL");
+WHERE ([c].[CustomerID] + [c].[City]) = N'ALFKIBerlin'");
         }
 
         public override async Task DTO_complex_distinct_orderby(bool isAsync)
@@ -4704,7 +4680,7 @@ FROM [Customers] AS [c]
 OUTER APPLY (
     SELECT TOP(1) [o].[OrderDate], [o].[OrderID]
     FROM [Orders] AS [o]
-    WHERE (([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL) AND ((DATEPART(year, [o].[OrderDate]) = 1998) AND DATEPART(year, [o].[OrderDate]) IS NOT NULL)
+    WHERE (([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL) AND (DATEPART(year, [o].[OrderDate]) = 1998)
     ORDER BY [o].[OrderID]
 ) AS [t]
 ORDER BY [c].[CustomerID], [t].[OrderID]");

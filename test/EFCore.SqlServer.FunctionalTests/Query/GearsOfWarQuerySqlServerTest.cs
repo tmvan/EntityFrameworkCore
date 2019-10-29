@@ -557,7 +557,7 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & [g].[Rank]) = [g].[
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[Rank] & (
+WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((([g].[Rank] & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
@@ -565,11 +565,15 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[Rank] & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
-    ORDER BY [g0].[Nickname], [g0].[SquadId]))",
+    ORDER BY [g0].[Nickname], [g0].[SquadId])) OR (
+    SELECT TOP(1) [g0].[Rank]
+    FROM [Gears] AS [g0]
+    WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
+    ORDER BY [g0].[Nickname], [g0].[SquadId]) IS NULL)",
                 //
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & (
+WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (((1 & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
@@ -577,7 +581,11 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
-    ORDER BY [g0].[Nickname], [g0].[SquadId]))");
+    ORDER BY [g0].[Nickname], [g0].[SquadId])) OR (
+    SELECT TOP(1) [g0].[Rank]
+    FROM [Gears] AS [g0]
+    WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
+    ORDER BY [g0].[Nickname], [g0].[SquadId]) IS NULL)");
         }
 
         public override async Task Where_enum_has_flag_subquery_with_pushdown(bool isAsync)
@@ -587,7 +595,7 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & (
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[Rank] & (
+WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((([g].[Rank] & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
@@ -595,11 +603,15 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[Rank] & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
-    ORDER BY [g0].[Nickname], [g0].[SquadId]))",
+    ORDER BY [g0].[Nickname], [g0].[SquadId])) OR (
+    SELECT TOP(1) [g0].[Rank]
+    FROM [Gears] AS [g0]
+    WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
+    ORDER BY [g0].[Nickname], [g0].[SquadId]) IS NULL)",
                 //
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & (
+WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (((1 & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
@@ -607,7 +619,11 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
-    ORDER BY [g0].[Nickname], [g0].[SquadId]))");
+    ORDER BY [g0].[Nickname], [g0].[SquadId])) OR (
+    SELECT TOP(1) [g0].[Rank]
+    FROM [Gears] AS [g0]
+    WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
+    ORDER BY [g0].[Nickname], [g0].[SquadId]) IS NULL)");
         }
 
         public override async Task Where_enum_has_flag_subquery_client_eval(bool isAsync)
@@ -617,7 +633,7 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((1 & (
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[Rank] & (
+WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND ((([g].[Rank] & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
@@ -625,7 +641,11 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[Rank] & (
     SELECT TOP(1) [g0].[Rank]
     FROM [Gears] AS [g0]
     WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
-    ORDER BY [g0].[Nickname], [g0].[SquadId]))");
+    ORDER BY [g0].[Nickname], [g0].[SquadId])) OR (
+    SELECT TOP(1) [g0].[Rank]
+    FROM [Gears] AS [g0]
+    WHERE [g0].[Discriminator] IN (N'Gear', N'Officer')
+    ORDER BY [g0].[Nickname], [g0].[SquadId]) IS NULL)");
         }
 
         public override async Task Where_enum_has_flag_with_non_nullable_parameter(bool isAsync)
@@ -847,10 +867,14 @@ FROM [Weapons] AS [w]");
         {
             await base.Null_propagation_optimization1(isAsync);
 
+            // issue #18597
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (([g].[LeaderNickname] = N'Marcus') AND [g].[LeaderNickname] IS NOT NULL)");
+WHERE [g].[Discriminator] IN (N'Gear', N'Officer') AND (CASE
+    WHEN ([g].[LeaderNickname] = N'Marcus') AND [g].[LeaderNickname] IS NOT NULL THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END = CAST(1 AS bit))");
         }
 
         public override async Task Null_propagation_optimization2(bool isAsync)
@@ -2590,10 +2614,7 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer')");
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-INNER JOIN [Weapons] AS [w] ON CAST(1 AS bit) = CASE
-    WHEN [w].[SynergyWithId] IS NOT NULL THEN CAST(1 AS bit)
-    ELSE CAST(0 AS bit)
-END
+INNER JOIN [Weapons] AS [w] ON [w].[SynergyWithId] IS NOT NULL
 WHERE [g].[Discriminator] IN (N'Gear', N'Officer')");
         }
 
@@ -2626,10 +2647,7 @@ WHERE [g].[Discriminator] IN (N'Gear', N'Officer')");
             AssertSql(
                 @"SELECT [g].[Nickname], [g].[SquadId], [g].[AssignedCityName], [g].[CityOfBirthName], [g].[Discriminator], [g].[FullName], [g].[HasSoulPatch], [g].[LeaderNickname], [g].[LeaderSquadId], [g].[Rank]
 FROM [Gears] AS [g]
-LEFT JOIN [Weapons] AS [w] ON CAST(1 AS bit) = CASE
-    WHEN [w].[SynergyWithId] IS NOT NULL THEN CAST(1 AS bit)
-    ELSE CAST(0 AS bit)
-END
+LEFT JOIN [Weapons] AS [w] ON [w].[SynergyWithId] IS NOT NULL
 WHERE [g].[Discriminator] IN (N'Gear', N'Officer')");
         }
 

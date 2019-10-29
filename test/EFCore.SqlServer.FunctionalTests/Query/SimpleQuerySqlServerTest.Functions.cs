@@ -27,7 +27,7 @@ WHERE [c].[ContactName] IS NOT NULL AND ([c].[ContactName] LIKE N'M%')");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR ([c].[ContactName] IS NOT NULL AND (LEFT([c].[ContactName], LEN([c].[ContactName])) = [c].[ContactName]))");
+WHERE ([c].[ContactName] = N'') OR ([c].[ContactName] IS NOT NULL AND ((LEFT([c].[ContactName], LEN([c].[ContactName])) = [c].[ContactName]) AND LEFT([c].[ContactName], LEN([c].[ContactName])) IS NOT NULL))");
         }
 
         public override async Task String_StartsWith_Column(bool isAsync)
@@ -37,7 +37,7 @@ WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR ([c].[Con
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR ([c].[ContactName] IS NOT NULL AND (LEFT([c].[ContactName], LEN([c].[ContactName])) = [c].[ContactName]))");
+WHERE ([c].[ContactName] = N'') OR ([c].[ContactName] IS NOT NULL AND ((LEFT([c].[ContactName], LEN([c].[ContactName])) = [c].[ContactName]) AND LEFT([c].[ContactName], LEN([c].[ContactName])) IS NOT NULL))");
         }
 
         public override async Task String_StartsWith_MethodCall(bool isAsync)
@@ -77,7 +77,7 @@ WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR ([c].[Con
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR ([c].[ContactName] IS NOT NULL AND (RIGHT([c].[ContactName], LEN([c].[ContactName])) = [c].[ContactName]))");
+WHERE ([c].[ContactName] = N'') OR ([c].[ContactName] IS NOT NULL AND ((RIGHT([c].[ContactName], LEN([c].[ContactName])) = [c].[ContactName]) AND RIGHT([c].[ContactName], LEN([c].[ContactName])) IS NOT NULL))");
         }
 
         public override async Task String_EndsWith_MethodCall(bool isAsync)
@@ -112,7 +112,7 @@ WHERE [c].[ContactName] IS NOT NULL AND ([c].[ContactName] LIKE N'%m')");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR (CHARINDEX([c].[ContactName], [c].[ContactName]) > 0)");
+WHERE ([c].[ContactName] = N'') OR (CHARINDEX([c].[ContactName], [c].[ContactName]) > 0)");
         }
 
         public override async Task String_Contains_Column(bool isAsync)
@@ -122,7 +122,7 @@ WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR (CHARINDE
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[ContactName] = N'') AND [c].[ContactName] IS NOT NULL) OR (CHARINDEX([c].[ContactName], [c].[ContactName]) > 0)");
+WHERE ([c].[ContactName] = N'') OR (CHARINDEX([c].[ContactName], [c].[ContactName]) > 0)");
         }
 
         public override async Task String_Contains_MethodCall(bool isAsync)
@@ -1065,35 +1065,35 @@ WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(int, CONVERT(nvarchar(max), [o]
             AssertSql(
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(tinyint, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(tinyint, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(decimal(18, 2), [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(decimal(18, 2), [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(float, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(float, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CAST(CONVERT(float, [o].[OrderID] % 1) AS real)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CAST(CONVERT(float, [o].[OrderID] % 1) AS real)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(smallint, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(smallint, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(int, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(int, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(bigint, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(bigint, [o].[OrderID] % 1)) >= CAST(0 AS bigint))",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(bigint, CONVERT(nvarchar(max), [o].[OrderID] % 1)) >= CAST(0 AS bigint))");
+WHERE ([o].[CustomerID] = N'ALFKI') AND (CONVERT(bigint, CONVERT(nvarchar(max), [o].[OrderID] % 1)) >= CAST(0 AS bigint))");
         }
 
         public override async Task Convert_ToString(bool isAsync)
@@ -1103,40 +1103,39 @@ WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONV
             AssertSql(
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(tinyint, [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(tinyint, [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(tinyint, [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(decimal(18, 2), [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(decimal(18, 2), [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(decimal(18, 2), [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(float, [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(float, [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(float, [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CAST(CONVERT(float, [o].[OrderID] % 1) AS real)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CAST(CONVERT(float, [o].[OrderID] % 1) AS real)) <> N'10') OR CONVERT(nvarchar(max), CAST(CONVERT(float, [o].[OrderID] % 1) AS real)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(smallint, [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(smallint, [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(smallint, [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(int, [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(int, [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(int, [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(bigint, [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(bigint, [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(bigint, [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND (CONVERT(nvarchar(max), CONVERT(nvarchar(max), [o].[OrderID] % 1)) <> N'10')",
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CONVERT(nvarchar(max), CONVERT(nvarchar(max), [o].[OrderID] % 1)) <> N'10') OR CONVERT(nvarchar(max), CONVERT(nvarchar(max), [o].[OrderID] % 1)) IS NULL)",
                 //
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
-WHERE (([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL) AND ((CHARINDEX(N'1997', CONVERT(nvarchar(max), [o].[OrderDate])) > 0) OR (CHARINDEX(N'1998', CONVERT(nvarchar(max), [o].[OrderDate])) > 0))");
-
+WHERE ([o].[CustomerID] = N'ALFKI') AND ((CHARINDEX(N'1997', CONVERT(nvarchar(max), [o].[OrderDate])) > 0) OR (CHARINDEX(N'1998', CONVERT(nvarchar(max), [o].[OrderDate])) > 0))");
         }
 
         public override async Task Indexof_with_emptystring(bool isAsync)
@@ -1227,7 +1226,7 @@ WHERE [c].[CustomerID] = N'ALFKI'");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE [c].[Region] IS NULL OR (([c].[Region] = N'') AND [c].[Region] IS NOT NULL)");
+WHERE [c].[Region] IS NULL OR ([c].[Region] = N'')");
         }
 
         public override void IsNullOrEmpty_in_projection()
@@ -1248,7 +1247,7 @@ FROM [Customers] AS [c]");
 
             AssertSql(
                 @"SELECT [c].[CustomerID] AS [Id], CASE
-    WHEN [c].[Region] IS NOT NULL AND (([c].[Region] <> N'') OR [c].[Region] IS NULL) THEN CAST(1 AS bit)
+    WHEN [c].[Region] IS NOT NULL AND ([c].[Region] <> N'') THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)
 END AS [Value]
 FROM [Customers] AS [c]");
@@ -1281,7 +1280,7 @@ WHERE [c].[Region] IS NULL OR (LTRIM(RTRIM([c].[Region])) = N'')");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (LTRIM([c].[ContactTitle]) = N'Owner') AND LTRIM([c].[ContactTitle]) IS NOT NULL");
+WHERE LTRIM([c].[ContactTitle]) = N'Owner'");
         }
 
         [ConditionalTheory(Skip = "Issue#17328")]
@@ -1317,7 +1316,7 @@ WHERE RTRIM([c].[ContactTitle]) = N'Owner'");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (LTRIM(RTRIM([c].[ContactTitle])) = N'Owner') AND LTRIM(RTRIM([c].[ContactTitle])) IS NOT NULL");
+WHERE LTRIM(RTRIM([c].[ContactTitle])) = N'Owner'");
         }
 
         [ConditionalTheory(Skip = "Issue#17328")]

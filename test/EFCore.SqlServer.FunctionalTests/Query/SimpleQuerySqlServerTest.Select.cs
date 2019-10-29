@@ -245,7 +245,7 @@ FROM [Employees] AS [e]");
             AssertSql(
                 @"SELECT [c].[CompanyName]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'London'");
         }
 
         public override async Task Select_project_filter2(bool isAsync)
@@ -348,7 +348,7 @@ WHERE [c].[CustomerID] LIKE N'A%'");
                 @"SELECT (
     SELECT TOP(1) [o].[OrderDate]
     FROM [Orders] AS [o]
-    WHERE ([o].[OrderID] < 10500) AND (([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL)) AS [OrderDates]
+    WHERE ([o].[OrderID] < 10500) AND ([c].[CustomerID] = [o].[CustomerID])) AS [OrderDates]
 FROM [Customers] AS [c]
 WHERE [c].[CustomerID] LIKE N'A%'");
         }
@@ -400,7 +400,7 @@ WHERE [c].[CustomerID] LIKE N'A%'");
     SELECT TOP(1) (
         SELECT TOP(1) [o].[ProductID]
         FROM [Order Details] AS [o]
-        WHERE ([o0].[OrderID] = [o].[OrderID]) AND ([o].[OrderID] <> CAST(LEN([c].[CustomerID]) AS int)))
+        WHERE ([o0].[OrderID] = [o].[OrderID]) AND (([o].[OrderID] <> CAST(LEN([c].[CustomerID]) AS int)) OR LEN([c].[CustomerID]) IS NULL))
     FROM [Orders] AS [o0]
     WHERE (([c].[CustomerID] = [o0].[CustomerID]) AND [o0].[CustomerID] IS NOT NULL) AND ([o0].[OrderID] < 10500)) AS [Order]
 FROM [Customers] AS [c]
@@ -448,7 +448,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT CAST([o].[EmployeeID] AS bigint)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -459,7 +459,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT [o].[EmployeeID]
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -493,7 +493,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT CAST((CAST([o].[OrderID] AS bigint) + CAST([o].[OrderID] AS bigint)) AS smallint)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -504,7 +504,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT CAST(-[o].[OrderID] AS bigint)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -515,7 +515,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT -CAST([o].[OrderID] AS bigint)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -537,7 +537,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT CAST(ABS([o].[OrderID]) AS bigint)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -548,7 +548,7 @@ ORDER BY [o].[OrderID]");
             AssertSql(
                 @"SELECT CAST([o].[OrderID] AS bigint) AS [LongOrder], CAST([o].[OrderID] AS smallint) AS [ShortOrder], [o].[OrderID] AS [Order]
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL
+WHERE [o].[CustomerID] = N'ALFKI'
 ORDER BY [o].[OrderID]");
         }
 
@@ -565,7 +565,7 @@ ORDER BY [o].[OrderID]");
     END
 END
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
+WHERE [o].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Projection_in_a_subquery_should_be_liftable(bool isAsync)
@@ -1175,7 +1175,7 @@ FROM [Customers] AS [c]
 CROSS APPLY (
     SELECT [o].[OrderDate], [c].[City], [o].[OrderID], [o].[CustomerID]
     FROM [Orders] AS [o]
-    WHERE ([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL
+    WHERE [c].[CustomerID] = [o].[CustomerID]
 ) AS [t]");
         }
 

@@ -434,7 +434,7 @@ WHERE [o].[CustomerID] = N'ALFKI'");
             AssertSql(
                 @"SELECT COUNT(*)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
+WHERE [o].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task OrderBy_Count_with_predicate(bool isAsync)
@@ -444,7 +444,7 @@ WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
             AssertSql(
                 @"SELECT COUNT(*)
 FROM [Orders] AS [o]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
+WHERE [o].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task OrderBy_Where_Count_with_predicate(bool isAsync)
@@ -658,7 +658,7 @@ ORDER BY [c].[ContactName] DESC");
             AssertSql(
                 @"SELECT TOP(1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL
+WHERE [c].[City] = N'London'
 ORDER BY [c].[ContactName] DESC");
         }
 
@@ -669,7 +669,7 @@ ORDER BY [c].[ContactName] DESC");
             AssertSql(
                 @"SELECT TOP(1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL
+WHERE [c].[City] = N'London'
 ORDER BY [c].[ContactName] DESC");
         }
 
@@ -690,7 +690,7 @@ ORDER BY [c].[ContactName] DESC");
             AssertSql(
                 @"SELECT TOP(1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL
+WHERE [c].[City] = N'London'
 ORDER BY [c].[ContactName] DESC");
         }
 
@@ -701,7 +701,7 @@ ORDER BY [c].[ContactName] DESC");
             AssertSql(
                 @"SELECT TOP(1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL
+WHERE [c].[City] = N'London'
 ORDER BY [c].[ContactName] DESC");
         }
 
@@ -1155,7 +1155,7 @@ SELECT CASE
     WHEN @__entity_equality_p_0_OrderID IN (
         SELECT [o].[OrderID]
         FROM [Orders] AS [o]
-        WHERE ([o].[CustomerID] = N'VINET') AND [o].[CustomerID] IS NOT NULL
+        WHERE [o].[CustomerID] = N'VINET'
     )
      THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)
@@ -1220,11 +1220,11 @@ WHERE [c].[CustomerID] IN (N'ABCDE', N'ALFKI', N'ANATR')");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[City] = N'México D.F.') AND [c].[City] IS NOT NULL) AND [c].[CustomerID] IN (N'ABCDE', N'ALFKI', N'ANATR')",
+WHERE ([c].[City] = N'México D.F.') AND [c].[CustomerID] IN (N'ABCDE', N'ALFKI', N'ANATR')",
                 //
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE (([c].[City] = N'México D.F.') AND [c].[City] IS NOT NULL) AND [c].[CustomerID] IN (N'ABCDE', N'ALFKI', N'ANATR')");
+WHERE ([c].[City] = N'México D.F.') AND [c].[CustomerID] IN (N'ABCDE', N'ALFKI', N'ANATR')");
         }
 
         public override async Task Where_subquery_all_not_equals_operator(bool isAsync)

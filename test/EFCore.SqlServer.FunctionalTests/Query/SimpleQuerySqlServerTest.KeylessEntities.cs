@@ -27,7 +27,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 FROM (
     SELECT [c].[CustomerID] + N'' as [CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region] FROM [Customers] AS [c]
 ) AS [c]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'London'");
         }
 
         public override void KeylessEntity_by_database_view()
@@ -113,7 +113,7 @@ FROM (
     select * from ""Orders""
 ) AS [o]
 LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
-WHERE ([c].[City] = N'Seattle') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'Seattle'");
         }
 
         public override async Task KeylessEntity_select_where_navigation_multi_level(bool isAsync)

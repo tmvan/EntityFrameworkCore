@@ -256,7 +256,7 @@ WHERE [c].[City] = N'Seattle'");
 FROM [Order Details] AS [o]
 INNER JOIN [Orders] AS [o0] ON [o].[OrderID] = [o0].[OrderID]
 LEFT JOIN [Customers] AS [c] ON [o0].[CustomerID] = [c].[CustomerID]
-WHERE ([c].[City] = N'London') AND [c].[City] IS NOT NULL");
+WHERE [c].[City] = N'London'");
         }
 
         public override async Task Select_Navigation(bool isAsync)
@@ -298,7 +298,7 @@ WHERE ([c].[City] = N'Seattle') AND (([c].[Phone] <> N'555 555 5555') OR [c].[Ph
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Orders] AS [o]
 LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
-WHERE (([c].[City] = N'Seattle') AND [c].[City] IS NOT NULL) AND (([c].[Phone] <> N'555 555 5555') OR [c].[Phone] IS NULL)");
+WHERE ([c].[City] = N'Seattle') AND (([c].[Phone] <> N'555 555 5555') OR [c].[Phone] IS NULL)");
         }
 
         public override async Task Select_Singleton_Navigation_With_Member_Access(bool isAsync)
@@ -352,7 +352,7 @@ CROSS JOIN (
 ) AS [t]
 LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
 LEFT JOIN [Customers] AS [c0] ON [t].[CustomerID] = [c0].[CustomerID]
-WHERE ([o].[OrderID] < 10300) AND ((([c].[City] = [c0].[City]) AND ([c].[City] IS NOT NULL AND [c0].[City] IS NOT NULL)) OR ([c].[City] IS NULL AND [c0].[City] IS NULL))");
+WHERE ([o].[OrderID] < 10300) AND (([c].[City] = [c0].[City]) OR ([c].[City] IS NULL AND [c0].[City] IS NULL))");
         }
 
         public override async Task Select_Where_Navigation_Equals_Navigation(bool isAsync)
@@ -876,7 +876,7 @@ WHERE ((
     FROM [Order Details] AS [o0]
     INNER JOIN [Orders] AS [o1] ON [o0].[OrderID] = [o1].[OrderID]
     LEFT JOIN [Customers] AS [c0] ON [o1].[CustomerID] = [c0].[CustomerID]
-    WHERE (([c].[Country] = [c0].[Country]) AND ([c].[Country] IS NOT NULL AND [c0].[Country] IS NOT NULL)) OR ([c].[Country] IS NULL AND [c0].[Country] IS NULL)) > 0) AND (([o].[OrderID] = 10643) OR ([o].[OrderID] = 10692))");
+    WHERE ([c].[Country] = [c0].[Country]) OR ([c].[Country] IS NULL AND [c0].[Country] IS NULL)) > 0) AND (([o].[OrderID] = 10643) OR ([o].[OrderID] = 10692))");
         }
 
         public override async Task GroupBy_on_nav_prop(bool isAsync)

@@ -20,6 +20,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.Internal
         {
             query = base.Process(query);
             query = new SearchConditionConvertingExpressionVisitor(SqlExpressionFactory).Visit(query);
+
+            // TODO: is this still needed?
             query = OptimizeSqlExpression(query);
 
             return query;

@@ -130,7 +130,7 @@ INNER JOIN (
     SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
     FROM [Orders] AS [o]
 ) AS [t] ON [c].[CustomerID] = [t].[CustomerID]
-WHERE ([t].[CustomerID] = N'ALFKI') AND [t].[CustomerID] IS NOT NULL");
+WHERE [t].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task Join_customers_orders_with_subquery_anonymous_property_method_with_take(bool isAsync)
@@ -190,7 +190,7 @@ WHERE [t].[CustomerID] = N'ALFKI'");
             AssertSql(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Customers] AS [c]
-INNER JOIN [Orders] AS [o] ON (([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL) AND (([c].[CustomerID] = [o].[CustomerID]) AND [o].[CustomerID] IS NOT NULL)");
+INNER JOIN [Orders] AS [o] ON ([c].[CustomerID] = [o].[CustomerID]) AND ([c].[CustomerID] = [o].[CustomerID])");
         }
 
         public override async Task Join_complex_condition(bool isAsync)
@@ -405,7 +405,7 @@ ORDER BY [t].[CustomerID]");
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Customers] AS [c]
 INNER JOIN [Orders] AS [o] ON [c].[CustomerID] = [o].[CustomerID]
-WHERE ([o].[CustomerID] = N'ALFKI') AND [o].[CustomerID] IS NOT NULL");
+WHERE [o].[CustomerID] = N'ALFKI'");
         }
 
         public override async Task GroupJoin_Where_OrderBy(bool isAsync)
