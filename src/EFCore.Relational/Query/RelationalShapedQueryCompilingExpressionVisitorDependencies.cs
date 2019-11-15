@@ -57,15 +57,18 @@ namespace Microsoft.EntityFrameworkCore.Query
         public RelationalShapedQueryCompilingExpressionVisitorDependencies(
             [NotNull] IQuerySqlGeneratorFactory querySqlGeneratorFactory,
             [NotNull] ISqlExpressionFactory sqlExpressionFactory,
-            [NotNull] IParameterNameGeneratorFactory parameterNameGeneratorFactory)
+            [NotNull] IParameterNameGeneratorFactory parameterNameGeneratorFactory,
+            [NotNull] IRelationalParameterBasedQueryPostprocessorFactory relationalParameterBasedQueryPostprocessorFactory)
         {
             Check.NotNull(querySqlGeneratorFactory, nameof(querySqlGeneratorFactory));
             Check.NotNull(sqlExpressionFactory, nameof(sqlExpressionFactory));
             Check.NotNull(parameterNameGeneratorFactory, nameof(parameterNameGeneratorFactory));
+            Check.NotNull(relationalParameterBasedQueryPostprocessorFactory, nameof(relationalParameterBasedQueryPostprocessorFactory));
 
             QuerySqlGeneratorFactory = querySqlGeneratorFactory;
             SqlExpressionFactory = sqlExpressionFactory;
             ParameterNameGeneratorFactory = parameterNameGeneratorFactory;
+            RelationalParameterBasedQueryPostprocessorFactory = relationalParameterBasedQueryPostprocessorFactory;
         }
 
         /// <summary>
@@ -84,6 +87,11 @@ namespace Microsoft.EntityFrameworkCore.Query
         public IParameterNameGeneratorFactory ParameterNameGeneratorFactory { get; }
 
         /// <summary>
+        ///     The query postprocessor based on parameter values.
+        /// </summary>
+        public IRelationalParameterBasedQueryPostprocessorFactory RelationalParameterBasedQueryPostprocessorFactory { get; }
+
+        /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
         /// </summary>
         /// <param name="querySqlGeneratorFactory"> A replacement for the current dependency of this type. </param>
@@ -93,7 +101,8 @@ namespace Microsoft.EntityFrameworkCore.Query
             => new RelationalShapedQueryCompilingExpressionVisitorDependencies(
                 querySqlGeneratorFactory,
                 SqlExpressionFactory,
-                ParameterNameGeneratorFactory);
+                ParameterNameGeneratorFactory,
+                RelationalParameterBasedQueryPostprocessorFactory);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -104,7 +113,8 @@ namespace Microsoft.EntityFrameworkCore.Query
             => new RelationalShapedQueryCompilingExpressionVisitorDependencies(
                 QuerySqlGeneratorFactory,
                 sqlExpressionFactory,
-                ParameterNameGeneratorFactory);
+                ParameterNameGeneratorFactory,
+                RelationalParameterBasedQueryPostprocessorFactory);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -116,6 +126,20 @@ namespace Microsoft.EntityFrameworkCore.Query
             => new RelationalShapedQueryCompilingExpressionVisitorDependencies(
                 QuerySqlGeneratorFactory,
                 SqlExpressionFactory,
-                parameterNameGeneratorFactory);
+                parameterNameGeneratorFactory,
+                RelationalParameterBasedQueryPostprocessorFactory);
+
+        /// <summary>
+        ///     Clones this dependency parameter object with one service replaced.
+        /// </summary>
+        /// <param name="relationalParameterBasedQueryPostprocessorFactory"> A replacement for the current dependency of this type. </param>
+        /// <returns> A new parameter object with the given service replaced. </returns>
+        public RelationalShapedQueryCompilingExpressionVisitorDependencies With(
+            [NotNull] IRelationalParameterBasedQueryPostprocessorFactory relationalParameterBasedQueryPostprocessorFactory)
+            => new RelationalShapedQueryCompilingExpressionVisitorDependencies(
+                QuerySqlGeneratorFactory,
+                SqlExpressionFactory,
+                ParameterNameGeneratorFactory,
+                relationalParameterBasedQueryPostprocessorFactory);
     }
 }
