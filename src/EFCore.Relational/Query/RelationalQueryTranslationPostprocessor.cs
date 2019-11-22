@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             UseRelationalNulls = RelationalOptionsExtension.Extract(queryCompilationContext.ContextOptions).UseRelationalNulls;
             SqlExpressionFactory = relationalDependencies.SqlExpressionFactory;
             _sqlExpressionOptimizingExpressionVisitor
-                = new SqlExpressionOptimizingExpressionVisitor(SqlExpressionFactory, UseRelationalNulls);
+                = new SqlExpressionOptimizingExpressionVisitor(SqlExpressionFactory/*, UseRelationalNulls*/);
         }
 
         protected virtual RelationalQueryTranslationPostprocessorDependencies RelationalDependencies { get; }
@@ -38,10 +38,10 @@ namespace Microsoft.EntityFrameworkCore.Query
             query = new TableAliasUniquifyingExpressionVisitor().Visit(query);
             query = new CaseWhenFlatteningExpressionVisitor(SqlExpressionFactory).Visit(query);
 
-            if (!UseRelationalNulls)
-            {
-                query = new NullSemanticsRewritingExpressionVisitor(SqlExpressionFactory).Visit(query);
-            }
+            //if (!UseRelationalNulls)
+            //{
+            //    query = new NullSemanticsRewritingExpressionVisitor(SqlExpressionFactory).Visit(query);
+            //}
 
             query = OptimizeSqlExpression(query);
 
