@@ -93,7 +93,6 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             return base.VisitExtension(extensionExpression);
         }
-
         protected abstract Expression VisitCase(CaseExpression caseExpression);
         protected abstract Expression VisitColumn(ColumnExpression columnExpression);
         protected abstract Expression VisitCrossApply(CrossApplyExpression crossApplyExpression);
