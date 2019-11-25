@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {

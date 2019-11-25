@@ -9,7 +9,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 {
     public class RelationalQueryTranslationPostprocessor : QueryTranslationPostprocessor
     {
-        private readonly SqlExpressionOptimizingExpressionVisitor _sqlExpressionOptimizingExpressionVisitor;
+        private readonly SqlExpressionOptimizingExpressionVisitor2 _sqlExpressionOptimizingExpressionVisitor;
 
         public RelationalQueryTranslationPostprocessor(
             QueryTranslationPostprocessorDependencies dependencies,
@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             UseRelationalNulls = RelationalOptionsExtension.Extract(queryCompilationContext.ContextOptions).UseRelationalNulls;
             SqlExpressionFactory = relationalDependencies.SqlExpressionFactory;
             _sqlExpressionOptimizingExpressionVisitor
-                = new SqlExpressionOptimizingExpressionVisitor(SqlExpressionFactory/*, UseRelationalNulls*/);
+                = new SqlExpressionOptimizingExpressionVisitor2(SqlExpressionFactory/*, UseRelationalNulls*/);
         }
 
         protected virtual RelationalQueryTranslationPostprocessorDependencies RelationalDependencies { get; }
