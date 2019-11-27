@@ -76,9 +76,9 @@ namespace Microsoft.EntityFrameworkCore.Query
                 _parametersValues = parametersValues;
             }
 
-            protected override Expression VisitSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression)
+            protected override Expression VisitSqlUnary(SqlUnaryExpression sqlUnaryExpression)
             {
-                var result = base.VisitSqlUnaryExpression(sqlUnaryExpression);
+                var result = base.VisitSqlUnary(sqlUnaryExpression);
                 if (result is SqlUnaryExpression newUnaryExpression
                     && newUnaryExpression.Operand is SqlParameterExpression parameterOperand)
                 {
@@ -97,32 +97,78 @@ namespace Microsoft.EntityFrameworkCore.Query
                 return result;
             }
 
-            protected override Expression VisitSqlBinaryExpression(SqlBinaryExpression sqlBinaryExpression)
+            protected override SqlExpression OptimizeSqlBinaryExpression(SqlBinaryExpression sqlBinaryExpression, bool leftNullable, bool rightNullable)
             {
-                var result = base.VisitSqlBinaryExpression(sqlBinaryExpression);
-                if (result is SqlBinaryExpression sqlBinaryResult)
+                var leftNullParameter = sqlBinaryExpression.Left is SqlParameterExpression leftParameter
+                    && _parametersValues[leftParameter.Name] == null;
+
+                var rightNullParameter = sqlBinaryExpression.Right is SqlParameterExpression rightParameter
+                    && _parametersValues[rightParameter.Name] == null;
+
+                if ((sqlBinaryExpression.OperatorType == ExpressionType.Equal || sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+                    && (leftNullParameter || rightNullParameter))
                 {
-                    var leftNullParameter = sqlBinaryResult.Left is SqlParameterExpression leftParameter
-                        && _parametersValues[leftParameter.Name] == null;
-
-                    var rightNullParameter = sqlBinaryResult.Right is SqlParameterExpression rightParameter
-                        && _parametersValues[rightParameter.Name] == null;
-
-                    if ((sqlBinaryResult.OperatorType == ExpressionType.Equal || sqlBinaryResult.OperatorType == ExpressionType.NotEqual)
+                    if ((sqlBinaryExpression.OperatorType == ExpressionType.Equal || sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
                         && (leftNullParameter || rightNullParameter))
                     {
-                        return SimplifyNullComparisonExpression(
-                            sqlBinaryResult.OperatorType,
-                            sqlBinaryResult.Left,
-                            sqlBinaryResult.Right,
-                            leftNullParameter,
-                            rightNullParameter,
-                            sqlBinaryResult.TypeMapping);
+                        if (leftNullParameter && rightNullParameter)
+                        {
+                            return SqlExpressionFactory.Constant(sqlBinaryExpression.OperatorType == ExpressionType.Equal, sqlBinaryExpression.TypeMapping);
+                        }
+
+                        if (leftNullParameter)
+                        {
+                            return OptimizeSqlUnaryExpression(
+                                SqlExpressionFactory.MakeUnary(
+                                    sqlBinaryExpression.OperatorType,
+                                    sqlBinaryExpression.Right,
+                                    sqlBinaryExpression.Type,
+                                    sqlBinaryExpression.TypeMapping));
+                        }
+
+                        if (rightNullParameter)
+                        {
+                            return OptimizeSqlUnaryExpression(
+                                SqlExpressionFactory.MakeUnary(
+                                    sqlBinaryExpression.OperatorType,
+                                    sqlBinaryExpression.Left,
+                                    sqlBinaryExpression.Type,
+                                    sqlBinaryExpression.TypeMapping));
+                        }
                     }
+
+                    return sqlBinaryExpression;
                 }
 
-                return result;
+                return base.OptimizeSqlBinaryExpression(sqlBinaryExpression, leftNullable, rightNullable);
             }
+
+            //protected override Expression VisitSqlBinary(SqlBinaryExpression sqlBinaryExpression)
+            //{
+            //    var result = base.VisitSqlBinary(sqlBinaryExpression);
+            //    if (result is SqlBinaryExpression sqlBinaryResult)
+            //    {
+            //        var leftNullParameter = sqlBinaryResult.Left is SqlParameterExpression leftParameter
+            //            && _parametersValues[leftParameter.Name] == null;
+
+            //        var rightNullParameter = sqlBinaryResult.Right is SqlParameterExpression rightParameter
+            //            && _parametersValues[rightParameter.Name] == null;
+
+            //        if ((sqlBinaryResult.OperatorType == ExpressionType.Equal || sqlBinaryResult.OperatorType == ExpressionType.NotEqual)
+            //            && (leftNullParameter || rightNullParameter))
+            //        {
+            //            return SimplifyNullComparisonExpression(
+            //                sqlBinaryResult.OperatorType,
+            //                sqlBinaryResult.Left,
+            //                sqlBinaryResult.Right,
+            //                leftNullParameter,
+            //                rightNullParameter,
+            //                sqlBinaryResult.TypeMapping);
+            //        }
+            //    }
+
+            //    return result;
+            //}
         }
 
         private class InExpressionValuesExpandingExpressionVisitor : ExpressionVisitor
