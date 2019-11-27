@@ -85,7 +85,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             return newExpression;
         }
 
-        protected override SqlExpression OptimizeSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression)
+        protected override SqlExpression OptimizeSqlUnaryExpression(
+            SqlUnaryExpression sqlUnaryExpression,
+            bool operandNullable,
+            bool operandOptimizeNullComparison)
         {
             switch (sqlUnaryExpression.OperatorType)
             {
@@ -135,8 +138,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             if (binaryOperand.OperatorType == ExpressionType.AndAlso
                                 || binaryOperand.OperatorType == ExpressionType.OrElse)
                             {
-                                var left = OptimizeSqlUnaryExpression(SqlExpressionFactory.Not(binaryOperand.Left));
-                                var right = OptimizeSqlUnaryExpression(SqlExpressionFactory.Not(binaryOperand.Right));
+                                var left = OptimizeSqlUnaryExpression(SqlExpressionFactory.Not(binaryOperand.Left), Nullable, OptimizeNullComparison);
+                                var right = OptimizeSqlUnaryExpression(SqlExpressionFactory.Not(binaryOperand.Right), Nullable, OptimizeNullComparison);
 
                                 return OptimizeLogicalSqlBinaryExpression(
                                     SqlExpressionFactory.MakeBinary(

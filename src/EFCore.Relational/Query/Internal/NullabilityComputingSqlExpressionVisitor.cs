@@ -460,7 +460,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             return result;
         }
 
-        protected virtual SqlExpression OptimizeSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression, bool operandNullable, bool operandOptimizeNullComparison)
+        protected virtual SqlExpression OptimizeSqlUnaryExpression(
+            SqlUnaryExpression sqlUnaryExpression,
+            bool operandNullable,
+            bool operandOptimizeNullComparison)
             => sqlUnaryExpression;
 
         protected override Expression VisitTable(TableExpression tableExpression)
