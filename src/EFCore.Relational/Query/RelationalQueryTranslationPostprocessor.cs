@@ -11,8 +11,6 @@ namespace Microsoft.EntityFrameworkCore.Query
 {
     public class RelationalQueryTranslationPostprocessor : QueryTranslationPostprocessor
     {
-        private readonly SqlExpressionOptimizingExpressionVisitor _sqlExpressionOptimizingExpressionVisitor;
-
         public RelationalQueryTranslationPostprocessor(
             [NotNull] QueryTranslationPostprocessorDependencies dependencies,
             [NotNull] RelationalQueryTranslationPostprocessorDependencies relationalDependencies,
@@ -25,8 +23,6 @@ namespace Microsoft.EntityFrameworkCore.Query
             RelationalDependencies = relationalDependencies;
             UseRelationalNulls = RelationalOptionsExtension.Extract(queryCompilationContext.ContextOptions).UseRelationalNulls;
             SqlExpressionFactory = relationalDependencies.SqlExpressionFactory;
-            _sqlExpressionOptimizingExpressionVisitor
-                = new SqlExpressionOptimizingExpressionVisitor(SqlExpressionFactory, UseRelationalNulls);
         }
 
         protected virtual RelationalQueryTranslationPostprocessorDependencies RelationalDependencies { get; }
@@ -42,22 +38,12 @@ namespace Microsoft.EntityFrameworkCore.Query
             query = new CollectionJoinApplyingExpressionVisitor().Visit(query);
             query = new TableAliasUniquifyingExpressionVisitor().Visit(query);
             query = new CaseWhenFlatteningExpressionVisitor(SqlExpressionFactory).Visit(query);
-
-            if (!UseRelationalNulls)
-            {
-                query = new NullSemanticsRewritingExpressionVisitor(SqlExpressionFactory).Visit(query);
-            }
-
             query = OptimizeSqlExpression(query);
 
             return query;
         }
 
         protected virtual Expression OptimizeSqlExpression([NotNull] Expression query)
-        {
-            Check.NotNull(query, nameof(query));
-
-            return _sqlExpressionOptimizingExpressionVisitor.Visit(query);
-        }
+            => query;
     }
 }

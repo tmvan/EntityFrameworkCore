@@ -42,7 +42,7 @@ WHERE CHARINDEX(N'_Ba_', [f].[FirstName]) > 0",
                 //
                 @"SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE CHARINDEX(N'%B%a%r', [f].[FirstName]) <= 0",
+WHERE NOT (CHARINDEX(N'%B%a%r', [f].[FirstName]) > 0)",
                 //
                 @"SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
@@ -50,7 +50,7 @@ WHERE CAST(0 AS bit) = CAST(1 AS bit)",
                 //
                 @"SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE CHARINDEX(NULL, [f].[FirstName]) <= 0");
+WHERE NOT (CHARINDEX(NULL, [f].[FirstName]) > 0)");
         }
 
         public override async Task String_contains_on_argument_with_wildcard_parameter(bool async)
@@ -92,19 +92,19 @@ WHERE (@__prm5_0 = N'') OR (CHARINDEX(@__prm5_0, [f].[FirstName]) > 0)",
 
 SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE (@__prm6_0 <> N'') AND (CHARINDEX(@__prm6_0, [f].[FirstName]) <= 0)",
+WHERE (@__prm6_0 <> N'') AND NOT (CHARINDEX(@__prm6_0, [f].[FirstName]) > 0)",
                 //
                 @"@__prm7_0='' (Size = 4000)
 
 SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE (@__prm7_0 <> N'') AND (CHARINDEX(@__prm7_0, [f].[FirstName]) <= 0)",
+WHERE (@__prm7_0 <> N'') AND NOT (CHARINDEX(@__prm7_0, [f].[FirstName]) > 0)",
                 //
                 @"@__prm8_0=NULL (Size = 4000)
 
 SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE CHARINDEX(@__prm8_0, [f].[FirstName]) <= 0");
+WHERE NOT (CHARINDEX(@__prm8_0, [f].[FirstName]) > 0)");
         }
 
         public override async Task String_contains_on_argument_with_wildcard_column(bool async)
@@ -126,7 +126,7 @@ WHERE ([f0].[LastName] = N'') OR (CHARINDEX([f0].[LastName], [f].[FirstName]) > 
                 @"SELECT [f].[FirstName] AS [fn], [f0].[LastName] AS [ln]
 FROM [FunkyCustomers] AS [f]
 CROSS JOIN [FunkyCustomers] AS [f0]
-WHERE (([f0].[LastName] <> N'') OR [f0].[LastName] IS NULL) AND (CHARINDEX([f0].[LastName], [f].[FirstName]) <= 0)");
+WHERE (([f0].[LastName] <> N'') OR [f0].[LastName] IS NULL) AND NOT (CHARINDEX([f0].[LastName], [f].[FirstName]) > 0)");
         }
 
         public override async Task String_starts_with_on_argument_with_wildcard_constant(bool async)
