@@ -119,6 +119,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 {
                     switch (operand)
                     {
+                        // !!!!!!!! always works !!!!!!!!
                         // !(true) -> false
                         // !(false) -> true
                         case SqlConstantExpression constantOperand
@@ -133,14 +134,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         case SqlUnaryExpression unaryOperand:
                             switch (unaryOperand.OperatorType)
                             {
+                                // !!!!!!!! always works !!!!!!!!
                                 // !(!a) -> a
                                 case ExpressionType.Not:
                                     return unaryOperand.Operand;
 
+                                // !!!!!!!! always works !!!!!!!!
                                 //!(a IS NULL) -> a IS NOT NULL
                                 case ExpressionType.Equal:
                                     return SqlExpressionFactory.IsNotNull(unaryOperand.Operand);
 
+                                // !!!!!!!! always works !!!!!!!!
                                 //!(a IS NOT NULL) -> a IS NULL
                                 case ExpressionType.NotEqual:
                                     return SqlExpressionFactory.IsNull(unaryOperand.Operand);
@@ -150,6 +154,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                         case SqlBinaryExpression binaryOperand:
                         {
+                            // !!!!!!!! always works !!!!!!!!
+                            // well, almost, incorrect when we use relational nulls but we don't care
                             // De Morgan's
                             if (binaryOperand.OperatorType == ExpressionType.AndAlso
                                 || binaryOperand.OperatorType == ExpressionType.OrElse)
@@ -232,6 +238,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             if (sqlUnaryOperand.OperatorType == ExpressionType.Equal
                                 || sqlUnaryOperand.OperatorType == ExpressionType.NotEqual)
                             {
+                                // !!!!!!!! always works !!!!!!!!
                                 // (a is null) is null -> false
                                 // (a is not null) is null -> false
                                 // (a is null) is not null -> true
@@ -469,6 +476,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             SqlExpression right,
             RelationalTypeMapping typeMapping)
         {
+            // !!!!!!!! always works !!!!!!!!
             // true && a -> a
             // true || a -> true
             // false && a -> false
@@ -485,6 +493,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
             else if (right is SqlConstantExpression newRightConstant)
             {
+                // !!!!!!!! always works !!!!!!!!
                 // a && true -> a
                 // a || true -> true
                 // a && false -> false
