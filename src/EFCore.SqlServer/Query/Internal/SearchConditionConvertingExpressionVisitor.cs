@@ -251,6 +251,26 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.Internal
             }
 
             var operand = (SqlExpression)Visit(sqlUnaryExpression.Operand);
+
+            //// TODO: hack - Not(bool_column) gets converted to Not(bool_column == true)
+            //// but we want to convert to bool_column != true
+            //// we should probably do that by re-applying optimizations after null semantics instead
+            //if (sqlUnaryExpression.OperatorType == ExpressionType.Not
+            //    && sqlUnaryExpression.Operand is ColumnExpression
+            //    && operand is SqlBinaryExpression sqlBinaryOperand
+            //    && sqlBinaryOperand.OperatorType == ExpressionType.Equal)
+            //{
+            //    var result = _sqlExpressionFactory.MakeBinary(
+            //        ExpressionType.NotEqual,
+            //        sqlBinaryOperand.Left,
+            //        sqlBinaryOperand.Right,
+            //        sqlBinaryOperand.TypeMapping);
+
+            //    _isSearchCondition = parentSearchCondition;
+
+            //    return result;
+            //}
+
             _isSearchCondition = parentSearchCondition;
 
             return ApplyConversion(sqlUnaryExpression.Update(operand), condition: resultCondition);

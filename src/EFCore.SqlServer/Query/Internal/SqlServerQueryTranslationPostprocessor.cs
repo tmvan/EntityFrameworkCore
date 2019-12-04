@@ -19,7 +19,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.Internal
         public override Expression Process(Expression query)
         {
             query = base.Process(query);
-            query = new SearchConditionConvertingExpressionVisitor(SqlExpressionFactory).Visit(query);
+            //query = new SearchConditionConvertingExpressionVisitor(SqlExpressionFactory).Visit(query);
 
             return query;
         }

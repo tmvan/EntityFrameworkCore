@@ -47,8 +47,14 @@ namespace Microsoft.EntityFrameworkCore.Query
                 canCache = false;
             }
 
+            var nullSemanticsOptimized = new NullSemanticsRewritingExpressionVisitor2(
+                UseRelationalNulls, Dependencies.SqlExpressionFactory, parametersValues).Visit(inExpressionOptimized);
+
+            //var nullParametersOptimized = new ParameterNullabilityBasedSqlExpressionOptimizingExpressionVisitor(
+            //    Dependencies.SqlExpressionFactory, UseRelationalNulls, parametersValues).Visit(inExpressionOptimized);
+
             var nullParametersOptimized = new ParameterNullabilityBasedSqlExpressionOptimizingExpressionVisitor(
-                Dependencies.SqlExpressionFactory, UseRelationalNulls, parametersValues).Visit(inExpressionOptimized);
+                Dependencies.SqlExpressionFactory, UseRelationalNulls, parametersValues).Visit(nullSemanticsOptimized);
 
             var fromSqlParameterOptimized = new FromSqlParameterApplyingExpressionVisitor(
                 Dependencies.SqlExpressionFactory,
@@ -76,53 +82,53 @@ namespace Microsoft.EntityFrameworkCore.Query
                 _parametersValues = parametersValues;
             }
 
-            protected override Expression VisitSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression)
-            {
-                var result = base.VisitSqlUnaryExpression(sqlUnaryExpression);
-                if (result is SqlUnaryExpression newUnaryExpression
-                    && newUnaryExpression.Operand is SqlParameterExpression parameterOperand)
-                {
-                    var parameterValue = _parametersValues[parameterOperand.Name];
-                    if (sqlUnaryExpression.OperatorType == ExpressionType.Equal)
-                    {
-                        return SqlExpressionFactory.Constant(parameterValue == null, sqlUnaryExpression.TypeMapping);
-                    }
+            //protected override Expression VisitSqlUnaryExpression(SqlUnaryExpression sqlUnaryExpression)
+            //{
+            //    var result = base.VisitSqlUnaryExpression(sqlUnaryExpression);
+            //    if (result is SqlUnaryExpression newUnaryExpression
+            //        && newUnaryExpression.Operand is SqlParameterExpression parameterOperand)
+            //    {
+            //        var parameterValue = _parametersValues[parameterOperand.Name];
+            //        if (sqlUnaryExpression.OperatorType == ExpressionType.Equal)
+            //        {
+            //            return SqlExpressionFactory.Constant(parameterValue == null, sqlUnaryExpression.TypeMapping);
+            //        }
 
-                    if (sqlUnaryExpression.OperatorType == ExpressionType.NotEqual)
-                    {
-                        return SqlExpressionFactory.Constant(parameterValue != null, sqlUnaryExpression.TypeMapping);
-                    }
-                }
+            //        if (sqlUnaryExpression.OperatorType == ExpressionType.NotEqual)
+            //        {
+            //            return SqlExpressionFactory.Constant(parameterValue != null, sqlUnaryExpression.TypeMapping);
+            //        }
+            //    }
 
-                return result;
-            }
+            //    return result;
+            //}
 
-            protected override Expression VisitSqlBinaryExpression(SqlBinaryExpression sqlBinaryExpression)
-            {
-                var result = base.VisitSqlBinaryExpression(sqlBinaryExpression);
-                if (result is SqlBinaryExpression sqlBinaryResult)
-                {
-                    var leftNullParameter = sqlBinaryResult.Left is SqlParameterExpression leftParameter
-                        && _parametersValues[leftParameter.Name] == null;
+            //protected override Expression VisitSqlBinaryExpression(SqlBinaryExpression sqlBinaryExpression)
+            //{
+            //    var result = base.VisitSqlBinaryExpression(sqlBinaryExpression);
+            //    if (result is SqlBinaryExpression sqlBinaryResult)
+            //    {
+            //        var leftNullParameter = sqlBinaryResult.Left is SqlParameterExpression leftParameter
+            //            && _parametersValues[leftParameter.Name] == null;
 
-                    var rightNullParameter = sqlBinaryResult.Right is SqlParameterExpression rightParameter
-                        && _parametersValues[rightParameter.Name] == null;
+            //        var rightNullParameter = sqlBinaryResult.Right is SqlParameterExpression rightParameter
+            //            && _parametersValues[rightParameter.Name] == null;
 
-                    if ((sqlBinaryResult.OperatorType == ExpressionType.Equal || sqlBinaryResult.OperatorType == ExpressionType.NotEqual)
-                        && (leftNullParameter || rightNullParameter))
-                    {
-                        return SimplifyNullComparisonExpression(
-                            sqlBinaryResult.OperatorType,
-                            sqlBinaryResult.Left,
-                            sqlBinaryResult.Right,
-                            leftNullParameter,
-                            rightNullParameter,
-                            sqlBinaryResult.TypeMapping);
-                    }
-                }
+            //        if ((sqlBinaryResult.OperatorType == ExpressionType.Equal || sqlBinaryResult.OperatorType == ExpressionType.NotEqual)
+            //            && (leftNullParameter || rightNullParameter))
+            //        {
+            //            return SimplifyNullComparisonExpression(
+            //                sqlBinaryResult.OperatorType,
+            //                sqlBinaryResult.Left,
+            //                sqlBinaryResult.Right,
+            //                leftNullParameter,
+            //                rightNullParameter,
+            //                sqlBinaryResult.TypeMapping);
+            //        }
+            //    }
 
-                return result;
-            }
+            //    return result;
+            //}
         }
 
         private sealed class InExpressionValuesExpandingExpressionVisitor : ExpressionVisitor

@@ -38,12 +38,12 @@ namespace Microsoft.EntityFrameworkCore.Query
             query = new TableAliasUniquifyingExpressionVisitor().Visit(query);
             query = new CaseWhenFlatteningExpressionVisitor(SqlExpressionFactory).Visit(query);
 
-            if (!UseRelationalNulls)
-            {
-                query = new NullSemanticsRewritingExpressionVisitor(SqlExpressionFactory).Visit(query);
-            }
+            //if (!UseRelationalNulls)
+            //{
+            //    query = new NullSemanticsRewritingExpressionVisitor(SqlExpressionFactory).Visit(query);
+            //}
 
-            query = OptimizeSqlExpression(query);
+            //query = OptimizeSqlExpression(query);
 
             return query;
         }
