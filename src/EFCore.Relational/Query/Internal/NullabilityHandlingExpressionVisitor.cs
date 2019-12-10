@@ -221,11 +221,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private (SqlExpression processedValues, bool hasNullValue) ProcessInExpressionValues(SqlExpression valuesExpression)
         {
-            if (valuesExpression == null)
-            {
-                return (processedValues: null, hasNullValue: false);
-            }
-
             var inValues = new List<object>();
             var hasNullValue = false;
             RelationalTypeMapping typeMapping = null;
@@ -260,6 +255,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
             }
 
+            // this is only correct if constant values are the only things allowed here, i.e no mixing of constants and columns
             var processedValues = inValues.Count > 0
                 ? (SqlExpression)Visit(_sqlExpressionFactory.Constant(inValues, typeMapping))
                 : null;
@@ -641,13 +637,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 // a == false -> !a
                 // a != true -> !a
                 // a != false -> a
-                return sqlBinaryExpression.OperatorType == ExpressionType.Equal
-                    ? rightTrueFalseValue
-                        ? left
-                        : _sqlExpressionFactory.Not(left)
-                    : rightTrueFalseValue
-                        ? _sqlExpressionFactory.Not(left)
-                        : left;
+                return sqlBinaryExpression.OperatorType == ExpressionType.Equal ^ rightTrueFalseValue
+                    ? _sqlExpressionFactory.Not(left)
+                    : left;
             }
 
             if (IsTrueOrFalse(left) is bool leftTrueFalseValue
@@ -661,13 +653,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 // false == a -> !a
                 // true != a -> !a
                 // false != a -> a
-                return sqlBinaryExpression.OperatorType == ExpressionType.Equal
-                    ? leftTrueFalseValue
-                        ? right
-                        : _sqlExpressionFactory.Not(right)
-                    : leftTrueFalseValue
-                        ? _sqlExpressionFactory.Not(right)
-                        : right;
+                return sqlBinaryExpression.OperatorType == ExpressionType.Equal ^ leftTrueFalseValue
+                    ? _sqlExpressionFactory.Not(right)
+                    : right;
             }
 
             // only correct in 2-value logic
@@ -711,14 +699,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return sqlBinaryExpression.OperatorType == ExpressionType.Equal ^ leftNegated == rightNegated
                     ? _sqlExpressionFactory.NotEqual(left, right)
                     : _sqlExpressionFactory.Equal(left, right);
-
-                //return sqlBinaryExpression.OperatorType == ExpressionType.Equal
-                //    ? leftNegated == rightNegated
-                //        ? _sqlExpressionFactory.Equal(left, right)
-                //        : _sqlExpressionFactory.NotEqual(left, right)
-                //    : leftNegated == rightNegated
-                //        ? _sqlExpressionFactory.NotEqual(left, right)
-                //        : _sqlExpressionFactory.Equal(left, right);
             }
 
             return sqlBinaryExpression.Update(left, right);
@@ -899,7 +879,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             _isNullable = _parameterValues[sqlParameterExpression.Name] == null;
 
-            return sqlParameterExpression;
+            return _isNullable
+                ? _sqlExpressionFactory.Constant(null, sqlParameterExpression.TypeMapping)
+                : (SqlExpression)sqlParameterExpression;
+            //return sqlParameterExpression;
         }
 
         protected override Expression VisitSqlUnary(SqlUnaryExpression sqlUnaryExpression)

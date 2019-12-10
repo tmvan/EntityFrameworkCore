@@ -490,11 +490,9 @@ SELECT [w].[Id], [w].[AmmunitionType], [w].[IsAutomatic], [w].[Name], [w].[Owner
 FROM [Weapons] AS [w]
 WHERE ([w].[AmmunitionType] & @__ammunitionType_0) > 0",
                 //
-                @"@__ammunitionType_0=NULL (DbType = Int32)
-
-SELECT [w].[Id], [w].[AmmunitionType], [w].[IsAutomatic], [w].[Name], [w].[OwnerFullName], [w].[SynergyWithId]
+                @"SELECT [w].[Id], [w].[AmmunitionType], [w].[IsAutomatic], [w].[Name], [w].[OwnerFullName], [w].[SynergyWithId]
 FROM [Weapons] AS [w]
-WHERE ([w].[AmmunitionType] & @__ammunitionType_0) > 0");
+WHERE ([w].[AmmunitionType] & NULL) > 0");
         }
 
         public override async Task Where_bitwise_or_enum(bool async)
@@ -758,9 +756,7 @@ WHERE [w].[AmmunitionType] IS NULL");
 SELECT [w].[Id], @__ammunitionType_0 AS [AmmoType]
 FROM [Weapons] AS [w]",
                 //
-                @"@__ammunitionType_0=NULL (DbType = Int32)
-
-SELECT [w].[Id], @__ammunitionType_0 AS [AmmoType]
+                @"SELECT [w].[Id], NULL AS [AmmoType]
 FROM [Weapons] AS [w]",
                 //
                 @"@__ammunitionType_0='2' (Nullable = true)
@@ -768,9 +764,7 @@ FROM [Weapons] AS [w]",
 SELECT [w].[Id], @__ammunitionType_0 AS [AmmoType]
 FROM [Weapons] AS [w]",
                 //
-                @"@__ammunitionType_0=NULL (DbType = Int32)
-
-SELECT [w].[Id], @__ammunitionType_0 AS [AmmoType]
+                @"SELECT [w].[Id], NULL AS [AmmoType]
 FROM [Weapons] AS [w]");
         }
 

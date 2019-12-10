@@ -70,11 +70,9 @@ SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
 WHERE (@__prm2_0 = N'') OR (CHARINDEX(@__prm2_0, [f].[FirstName]) > 0)",
                 //
-                @"@__prm3_0=NULL (Size = 4000)
-
-SELECT [f].[FirstName]
+                @"SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE CHARINDEX(@__prm3_0, [f].[FirstName]) > 0",
+WHERE CHARINDEX(NULL, [f].[FirstName]) > 0",
                 //
                 @"@__prm4_0='' (Size = 4000)
 
@@ -100,11 +98,9 @@ SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
 WHERE (@__prm7_0 <> N'') AND NOT (CHARINDEX(@__prm7_0, [f].[FirstName]) > 0)",
                 //
-                @"@__prm8_0=NULL (Size = 4000)
-
-SELECT [f].[FirstName]
+                @"SELECT [f].[FirstName]
 FROM [FunkyCustomers] AS [f]
-WHERE NOT (CHARINDEX(@__prm8_0, [f].[FirstName]) > 0)");
+WHERE NOT (CHARINDEX(NULL, [f].[FirstName]) > 0)");
         }
 
         public override async Task String_contains_on_argument_with_wildcard_column(bool async)

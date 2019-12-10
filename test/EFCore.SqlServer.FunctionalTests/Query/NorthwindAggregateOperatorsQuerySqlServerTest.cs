@@ -1171,10 +1171,8 @@ WHERE [c].[CustomerID] IN (N'ALFKI')");
             base.Contains_over_entityType_with_null_should_rewrite_to_identity_equality();
 
             AssertSql(
-                @"@__entity_equality_p_0_OrderID=NULL (DbType = Int32)
-
-SELECT CASE
-    WHEN @__entity_equality_p_0_OrderID IN (
+                @"SELECT CASE
+    WHEN NULL IN (
         SELECT [o].[OrderID]
         FROM [Orders] AS [o]
         WHERE [o].[CustomerID] = N'VINET'
