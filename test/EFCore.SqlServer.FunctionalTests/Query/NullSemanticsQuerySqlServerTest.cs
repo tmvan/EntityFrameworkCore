@@ -1598,6 +1598,14 @@ FROM [Entities1] AS [e]
 WHERE ([e].[NullableIntA] IS NOT NULL OR [e].[NullableIntB] IS NOT NULL) AND (([e].[NullableIntA] = [e].[NullableIntC]) OR ([e].[NullableIntA] IS NULL AND [e].[NullableIntC] IS NULL))");
         }
 
+        public override void Null_semantics_with_null_check_complex2()
+        {
+            base.Null_semantics_with_null_check_complex2();
+
+            AssertSql(
+                @"");
+        }
+
         public override void IsNull_on_complex_expression()
         {
             base.IsNull_on_complex_expression();

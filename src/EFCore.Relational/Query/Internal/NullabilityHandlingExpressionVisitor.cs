@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -18,6 +19,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private readonly bool _useRelationalNulls;
         private readonly ISqlExpressionFactory _sqlExpressionFactory;
         private readonly List<ColumnExpression> _nonNullableColumns = new List<ColumnExpression>();
+        //private readonly List<ColumnExpression> _nonNullableColumnCandidates = new List<ColumnExpression>();
         private readonly IReadOnlyDictionary<string, object> _parameterValues;
 
         private bool _isNullable;
@@ -506,27 +508,53 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _canOptimize = _canOptimize && (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso
                 || sqlBinaryExpression.OperatorType == ExpressionType.OrElse);
 
-            var nonNullableColumns = new List<ColumnExpression>();
-            if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
-            {
-                nonNullableColumns = FindNonNullableColumns(sqlBinaryExpression.Left);
-            }
+            //var nonNullableColumns = new List<ColumnExpression>();
+            //if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
+            //{
+            //    nonNullableColumns = FindNonNullableColumns(sqlBinaryExpression.Left);
+            //}
 
+            var currentNonNullableColumns = _nonNullableColumns.ToList();
             var newLeft = (SqlExpression)Visit(sqlBinaryExpression.Left);
             var leftNullable = _isNullable;
 
+            var leftNonNullableColumns = _nonNullableColumns.ToList();
+
             _isNullable = false;
-            if (nonNullableColumns.Count > 0)
+            _nonNullableColumns.Clear();
+            if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
             {
-                _nonNullableColumns.AddRange(nonNullableColumns);
+                _nonNullableColumns.AddRange(leftNonNullableColumns);
+            }
+            else
+            {
+                _nonNullableColumns.AddRange(currentNonNullableColumns);
             }
 
             var newRight = (SqlExpression)Visit(sqlBinaryExpression.Right);
             var rightNullable = _isNullable;
 
-            foreach (var nonNullableColumn in nonNullableColumns)
+            var rightNonNullableColumns = new List<ColumnExpression>();
+            rightNonNullableColumns.AddRange(_nonNullableColumns);
+
+            _nonNullableColumns.Clear();
+            //_nonNullableColumns.AddRange(currentNonNullableColumns);
+            if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
             {
-                _nonNullableColumns.Remove(nonNullableColumn);
+                _nonNullableColumns.AddRange(leftNonNullableColumns.Union(rightNonNullableColumns));
+            }
+            else if (sqlBinaryExpression.OperatorType == ExpressionType.OrElse)
+            {
+                _nonNullableColumns.AddRange(leftNonNullableColumns.Intersect(rightNonNullableColumns));
+            }
+            else if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+            {
+                _nonNullableColumns.AddRange(currentNonNullableColumns);
+                TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
+            }
+            else
+            {
+                _nonNullableColumns.AddRange(currentNonNullableColumns);
             }
 
             if (sqlBinaryExpression.OperatorType == ExpressionType.Coalesce)
@@ -585,6 +613,28 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _canOptimize = canOptimize;
 
             return sqlBinaryExpression.Update(newLeft, newRight);
+
+            void TryAddToNonNullableColumnCandidates(SqlBinaryExpression sqlBinaryExpression)
+            {
+                if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+                {
+                    if (sqlBinaryExpression.Left is ColumnExpression leftColumn
+                        && leftColumn.IsNullable
+                        && sqlBinaryExpression.Right is SqlConstantExpression rightConstant
+                        && rightConstant.Value == null)
+                    {
+                        _nonNullableColumns.Add(leftColumn);
+                    }
+
+                    if (sqlBinaryExpression.Right is ColumnExpression rightColumn
+                        && rightColumn.IsNullable
+                        && sqlBinaryExpression.Left is SqlConstantExpression leftConstant
+                        && leftConstant.Value == null)
+                    {
+                        _nonNullableColumns.Add(rightColumn);
+                    }
+                }
+            }
         }
 
         private SqlExpression OptimizeComparison(

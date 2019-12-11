@@ -1039,6 +1039,37 @@ namespace Microsoft.EntityFrameworkCore.Query
             var result3 = query3.ToList();
         }
 
+
+        [ConditionalFact]
+        public virtual void Null_semantics_with_null_check_complex2()
+        {
+            using var ctx = CreateContext();
+            var query1 = ctx.Entities1.Where(e =>
+                (
+                    (
+                        (e.NullableBoolA != null)
+                        &&
+                        (
+                            (e.NullableBoolB != null)
+                            &&
+                            (
+                                (e.NullableBoolB != e.NullableBoolA)
+                                ||
+                                (e.NullableBoolC != null)
+                            )
+                        )
+                    )
+                    &&
+                    (e.NullableBoolC != e.NullableBoolB)
+                )
+                ||
+                (
+                    e.NullableBoolC != e.BoolB
+                )).ToList();
+        }
+
+
+
         [ConditionalFact]
         public virtual void IsNull_on_complex_expression()
         {
