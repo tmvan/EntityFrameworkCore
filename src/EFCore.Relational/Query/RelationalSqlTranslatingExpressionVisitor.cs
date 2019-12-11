@@ -511,11 +511,13 @@ namespace Microsoft.EntityFrameworkCore.Query
             return TranslationFailed(binaryExpression.Left, Visit(left), out var sqlLeft)
                 || TranslationFailed(binaryExpression.Right, Visit(right), out var sqlRight)
                 ? null
-                : _sqlExpressionFactory.MakeBinary(
-                    binaryExpression.NodeType,
-                    sqlLeft,
-                    sqlRight,
-                    null);
+                : binaryExpression.NodeType == ExpressionType.Coalesce
+                    ? _sqlExpressionFactory.Coalesce(sqlLeft, sqlRight)
+                    : (Expression)_sqlExpressionFactory.MakeBinary(
+                        binaryExpression.NodeType,
+                        sqlLeft,
+                        sqlRight,
+                        null);
         }
 
         private SqlConstantExpression GetConstantOrNull(Expression expression)

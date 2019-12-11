@@ -401,14 +401,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 _nonNullableColumns.Remove(nonNullableColumn);
             }
 
-            if (sqlBinaryExpression.OperatorType == ExpressionType.Coalesce)
-            {
-                _isNullable = leftNullable && rightNullable;
-                _canOptimize = canOptimize;
-
-                return sqlBinaryExpression.Update(newLeft, newRight);
-            }
-
             if (sqlBinaryExpression.OperatorType == ExpressionType.Equal
                 || sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
             {
@@ -599,6 +591,23 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             var canOptimize = _canOptimize;
             _canOptimize = false;
+
+            if (sqlFunctionExpression.IsBuiltIn
+                && string.Equals(sqlFunctionExpression.Name, "COALESCE", StringComparison.OrdinalIgnoreCase))
+            {
+                _isNullable = false;
+                var newLeft = (SqlExpression)Visit(sqlFunctionExpression.Arguments[0]);
+                var leftNullable = _isNullable;
+
+                _isNullable = false;
+                var newRight = (SqlExpression)Visit(sqlFunctionExpression.Arguments[1]);
+                var rightNullable = _isNullable;
+
+                _isNullable = leftNullable && rightNullable;
+                _canOptimize = canOptimize;
+
+                return sqlFunctionExpression.Update(sqlFunctionExpression.Instance, new[] { newLeft, newRight });
+            }
 
             var newInstance = (SqlExpression)Visit(sqlFunctionExpression.Instance);
             var newArguments = new SqlExpression[sqlFunctionExpression.Arguments.Count];
