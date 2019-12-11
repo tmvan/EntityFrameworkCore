@@ -1066,6 +1066,29 @@ namespace Microsoft.EntityFrameworkCore.Query
                 (
                     e.NullableBoolC != e.BoolB
                 )).ToList();
+
+            var query2 = ctx.Entities1.Where(e =>
+                (
+                    (
+                        (e.NullableBoolA != null)
+                        &&
+                        (
+                            (e.NullableBoolB != null)
+                            &&
+                            (
+                                (e.NullableBoolB != e.NullableBoolA)
+                                ||
+                                (e.NullableBoolC != null)
+                            )
+                        )
+                    )
+                    &&
+                    (e.NullableBoolC != e.NullableBoolB)
+                )
+                ||
+                (
+                    e.NullableBoolB != e.BoolB
+                )).ToList();
         }
 
 

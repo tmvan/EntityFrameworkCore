@@ -53,15 +53,22 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _canOptimize = false;
             var newOperand = (SqlExpression)Visit(caseExpression.Operand);
             var newWhenClauses = new List<CaseWhenClause>();
+
+            var currentNonNullableColumns = _nonNullableColumns.ToList();
+
             foreach (var whenClause in caseExpression.WhenClauses)
             {
                 _canOptimize = testIsCondition;
+
                 var newTest = (SqlExpression)Visit(whenClause.Test);
                 _canOptimize = false;
                 _isNullable = false;
                 var newResult = (SqlExpression)Visit(whenClause.Result);
                 isNullable |= _isNullable;
                 newWhenClauses.Add(new CaseWhenClause(newTest, newResult));
+
+                _nonNullableColumns.Clear();
+                _nonNullableColumns.AddRange(currentNonNullableColumns);
             }
 
             _canOptimize = false;
@@ -547,11 +554,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 _nonNullableColumns.AddRange(leftNonNullableColumns.Intersect(rightNonNullableColumns));
             }
-            else if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
-            {
-                _nonNullableColumns.AddRange(currentNonNullableColumns);
-                TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
-            }
+            //else if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+            //{
+            //    _nonNullableColumns.AddRange(currentNonNullableColumns);
+            //    TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
+            //}
             else
             {
                 _nonNullableColumns.AddRange(currentNonNullableColumns);
@@ -601,16 +608,31 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                     _canOptimize = canOptimize;
 
+                    if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+                    {
+                        TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
+                    }
+
                     return result;
                 }
 
                 _canOptimize = canOptimize;
+
+                if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+                {
+                    TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
+                }
 
                 return optimized;
             }
 
             _isNullable = leftNullable || rightNullable;
             _canOptimize = canOptimize;
+
+            if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
+            {
+                TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
+            }
 
             return sqlBinaryExpression.Update(newLeft, newRight);
 

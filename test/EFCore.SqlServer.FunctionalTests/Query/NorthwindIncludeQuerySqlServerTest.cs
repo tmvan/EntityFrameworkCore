@@ -977,7 +977,7 @@ FROM (
         WHEN [o].[OrderID] > 0 THEN CAST(1 AS bit)
         ELSE CAST(0 AS bit)
     END, CASE
-        WHEN [c].[CustomerID] IS NOT NULL THEN [c].[City]
+        WHEN CAST(1 AS bit) = CAST(1 AS bit) THEN [c].[City]
         ELSE N''
     END
 ) AS [t]
