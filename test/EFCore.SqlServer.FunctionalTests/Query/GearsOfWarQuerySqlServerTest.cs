@@ -6220,7 +6220,7 @@ FROM [Gears] AS [g]
 WHERE [g].[Discriminator] IN (N'Gear', N'Officer')
 ORDER BY CASE
     WHEN CASE
-        WHEN CAST(1 AS bit) = CAST(1 AS bit) THEN CASE
+        WHEN [g].[LeaderNickname] IS NOT NULL THEN CASE
             WHEN (CAST(LEN([g].[Nickname]) AS int) = 5) AND LEN([g].[Nickname]) IS NOT NULL THEN CAST(1 AS bit)
             ELSE CAST(0 AS bit)
         END
@@ -6228,7 +6228,6 @@ ORDER BY CASE
     END IS NOT NULL THEN CAST(1 AS bit)
     ELSE CAST(0 AS bit)
 END");
-
         }
 
         public override async Task GetValueOrDefault_in_projection(bool async)
