@@ -18,10 +18,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private readonly bool _useRelationalNulls;
         private readonly ISqlExpressionFactory _sqlExpressionFactory;
-        private readonly List<ColumnExpression> _nonNullableColumns = new List<ColumnExpression>();
-        //private readonly List<ColumnExpression> _nonNullableColumnCandidates = new List<ColumnExpression>();
         private readonly IReadOnlyDictionary<string, object> _parameterValues;
-
+        private readonly List<ColumnExpression> _nonNullableColumns = new List<ColumnExpression>();
         private bool _isNullable;
         private bool _canOptimize;
 
@@ -39,6 +37,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             CanCache = true;
         }
 
+        private void RestoreNonNullableColumnsList(int counter)
+        {
+            _nonNullableColumns.RemoveRange(counter, _nonNullableColumns.Count - counter);
+        }
+
         protected override Expression VisitCase(CaseExpression caseExpression)
         {
             Check.NotNull(caseExpression, nameof(caseExpression));
@@ -48,14 +51,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             // otherwise the result is nullable if any of the WhenClause results OR ElseResult is nullable
             var isNullable = caseExpression.ElseResult == null;
 
+            var currentNonNullableColumnsCount = _nonNullableColumns.Count;
+
             var canOptimize = _canOptimize;
             var testIsCondition = caseExpression.Operand == null;
             _canOptimize = false;
             var newOperand = (SqlExpression)Visit(caseExpression.Operand);
+
+            RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
+
             var newWhenClauses = new List<CaseWhenClause>();
-
-            var currentNonNullableColumns = _nonNullableColumns.ToList();
-
             foreach (var whenClause in caseExpression.WhenClauses)
             {
                 _canOptimize = testIsCondition;
@@ -67,14 +72,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 isNullable |= _isNullable;
                 newWhenClauses.Add(new CaseWhenClause(newTest, newResult));
 
-                _nonNullableColumns.Clear();
-                _nonNullableColumns.AddRange(currentNonNullableColumns);
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
             }
 
             _canOptimize = false;
             var newElseResult = (SqlExpression)Visit(caseExpression.ElseResult);
             _isNullable |= isNullable;
             _canOptimize = canOptimize;
+
+            RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
 
             return caseExpression.Update(newOperand, newWhenClauses, newElseResult);
         }
@@ -445,11 +451,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             var canOptimize = _canOptimize;
             var projections = new List<ProjectionExpression>();
             _canOptimize = false;
+
+            var currentNonNullableColumnsCount = _nonNullableColumns.Count;
             foreach (var item in selectExpression.Projection)
             {
                 var updatedProjection = (ProjectionExpression)Visit(item);
                 projections.Add(updatedProjection);
                 changed |= updatedProjection != item;
+
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
             }
 
             var tables = new List<TableExpressionBase>();
@@ -458,11 +468,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var newTable = (TableExpressionBase)Visit(table);
                 changed |= newTable != table;
                 tables.Add(newTable);
+
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
             }
 
             _canOptimize = true;
             var predicate = (SqlExpression)Visit(selectExpression.Predicate);
             changed |= predicate != selectExpression.Predicate;
+
+            RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
 
             var groupBy = new List<SqlExpression>();
             _canOptimize = false;
@@ -471,11 +485,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var newGroupingKey = (SqlExpression)Visit(groupingKey);
                 changed |= newGroupingKey != groupingKey;
                 groupBy.Add(newGroupingKey);
+
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
             }
 
             _canOptimize = true;
             var havingExpression = (SqlExpression)Visit(selectExpression.Having);
             changed |= havingExpression != selectExpression.Having;
+
+            RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
 
             var orderings = new List<OrderingExpression>();
             _canOptimize = false;
@@ -484,13 +502,19 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var orderingExpression = (SqlExpression)Visit(ordering.Expression);
                 changed |= orderingExpression != ordering.Expression;
                 orderings.Add(ordering.Update(orderingExpression));
+
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
             }
 
             var offset = (SqlExpression)Visit(selectExpression.Offset);
             changed |= offset != selectExpression.Offset;
 
+            RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
+
             var limit = (SqlExpression)Visit(selectExpression.Limit);
             changed |= limit != selectExpression.Limit;
+
+            RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
 
             _canOptimize = canOptimize;
 
@@ -515,12 +539,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _canOptimize = _canOptimize && (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso
                 || sqlBinaryExpression.OperatorType == ExpressionType.OrElse);
 
-            //var nonNullableColumns = new List<ColumnExpression>();
-            //if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
-            //{
-            //    nonNullableColumns = FindNonNullableColumns(sqlBinaryExpression.Left);
-            //}
-
             var currentNonNullableColumns = _nonNullableColumns.ToList();
             var newLeft = (SqlExpression)Visit(sqlBinaryExpression.Left);
             var leftNullable = _isNullable;
@@ -529,13 +547,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             _isNullable = false;
             _nonNullableColumns.Clear();
+            _nonNullableColumns.AddRange(currentNonNullableColumns);
             if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
             {
-                _nonNullableColumns.AddRange(leftNonNullableColumns);
-            }
-            else
-            {
-                _nonNullableColumns.AddRange(currentNonNullableColumns);
+                _nonNullableColumns.AddRange(leftNonNullableColumns.Except(_nonNullableColumns));
             }
 
             var newRight = (SqlExpression)Visit(sqlBinaryExpression.Right);
@@ -585,6 +600,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     rightNullable,
                     canOptimize);
 
+                if (optimized is SqlUnaryExpression optimizedUnary
+                    && optimizedUnary.OperatorType == ExpressionType.NotEqual
+                    && optimizedUnary.Operand is ColumnExpression optimizedUnaryColumnOperand)
+                {
+                    _nonNullableColumns.Add(optimizedUnaryColumnOperand);
+                }
+
                 // we assume that NullSemantics rewrite is only needed (on the current level)
                 // if the optimization didn't make any changes.
                 // Reason is that optimization can/will change the nullability of the resulting expression
@@ -608,20 +630,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                     _canOptimize = canOptimize;
 
-                    if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
-                    {
-                        TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
-                    }
-
                     return result;
                 }
 
                 _canOptimize = canOptimize;
-
-                if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
-                {
-                    TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
-                }
 
                 return optimized;
             }
@@ -629,34 +641,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _isNullable = leftNullable || rightNullable;
             _canOptimize = canOptimize;
 
-            if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
-            {
-                TryAddToNonNullableColumnCandidates(sqlBinaryExpression);
-            }
-
             return sqlBinaryExpression.Update(newLeft, newRight);
-
-            void TryAddToNonNullableColumnCandidates(SqlBinaryExpression sqlBinaryExpression)
-            {
-                if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
-                {
-                    if (sqlBinaryExpression.Left is ColumnExpression leftColumn
-                        && leftColumn.IsNullable
-                        && sqlBinaryExpression.Right is SqlConstantExpression rightConstant
-                        && rightConstant.Value == null)
-                    {
-                        _nonNullableColumns.Add(leftColumn);
-                    }
-
-                    if (sqlBinaryExpression.Right is ColumnExpression rightColumn
-                        && rightColumn.IsNullable
-                        && sqlBinaryExpression.Left is SqlConstantExpression leftConstant
-                        && leftConstant.Value == null)
-                    {
-                        _nonNullableColumns.Add(rightColumn);
-                    }
-                }
-            }
         }
 
         private SqlExpression OptimizeComparison(

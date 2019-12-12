@@ -1676,6 +1676,86 @@ WHERE [e].[IntA] > @__i_0");
                 @"");
         }
 
+        public override void Nullable_column_info_propagates_inside_binary_AndAlso()
+        {
+            base.Nullable_column_info_propagates_inside_binary_AndAlso();
+
+            AssertSql(
+                @"SELECT [e].[Id]
+FROM [Entities1] AS [e]
+WHERE ([e].[NullableStringA] IS NOT NULL AND [e].[NullableStringB] IS NOT NULL) AND ([e].[NullableStringA] <> [e].[NullableStringB])");
+        }
+
+        public override void Nullable_column_info_doesnt_propagate_inside_binary_OrElse()
+        {
+            base.Nullable_column_info_doesnt_propagate_inside_binary_OrElse();
+
+            AssertSql(
+                @"SELECT [e].[Id]
+FROM [Entities1] AS [e]
+WHERE ([e].[NullableStringA] IS NOT NULL OR [e].[NullableStringB] IS NOT NULL) AND ((([e].[NullableStringA] <> [e].[NullableStringB]) OR ([e].[NullableStringA] IS NULL OR [e].[NullableStringB] IS NULL)) AND ([e].[NullableStringA] IS NOT NULL OR [e].[NullableStringB] IS NOT NULL))");
+        }
+
+        public override void Nullable_column_info_propagates_inside_binary_OrElse_when_info_is_duplicated()
+        {
+            base.Nullable_column_info_propagates_inside_binary_OrElse_when_info_is_duplicated();
+
+            AssertSql(
+                @"SELECT [e].[Id]
+FROM [Entities1] AS [e]
+WHERE (([e].[NullableStringA] IS NOT NULL AND [e].[NullableStringB] IS NOT NULL) OR [e].[NullableStringA] IS NOT NULL) AND (([e].[NullableStringA] <> [e].[NullableStringB]) OR [e].[NullableStringB] IS NULL)",
+                //
+                @"SELECT [e].[Id]
+FROM [Entities1] AS [e]
+WHERE (([e].[NullableStringA] IS NOT NULL AND [e].[NullableStringB] IS NOT NULL) OR ([e].[NullableStringB] IS NOT NULL AND [e].[NullableStringA] IS NOT NULL)) AND ([e].[NullableStringA] <> [e].[NullableStringB])");
+        }
+
+        public override void Nullable_column_info_propagates_inside_conditional()
+        {
+            base.Nullable_column_info_propagates_inside_conditional();
+
+            AssertSql(
+                @"SELECT CASE
+    WHEN [e].[NullableStringA] IS NOT NULL THEN CASE
+        WHEN [e].[NullableStringA] <> [e].[StringA] THEN CAST(1 AS bit)
+        ELSE CAST(0 AS bit)
+    END
+    ELSE [e].[BoolA]
+END
+FROM [Entities1] AS [e]");
+        }
+
+        public override void Nullable_column_info_doesnt_propagate_between_projections()
+        {
+            base.Nullable_column_info_doesnt_propagate_between_projections();
+
+            AssertSql(
+                @"SELECT CASE
+    WHEN [e].[NullableStringA] IS NOT NULL THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END AS [Foo], CASE
+    WHEN ([e].[NullableStringA] <> [e].[StringA]) OR [e].[NullableStringA] IS NULL THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END AS [Bar]
+FROM [Entities1] AS [e]");
+        }
+
+        public override void Nullable_column_info_doesnt_propagate_between_different_parts_of_select()
+        {
+            base.Nullable_column_info_doesnt_propagate_between_different_parts_of_select();
+
+            AssertSql(
+                @"");
+        }
+
+        public override void Nullable_column_info_propagation_complex()
+        {
+            base.Nullable_column_info_propagation_complex();
+
+            AssertSql(
+                @"");
+        }
+
         private void AssertSql(params string[] expected)
             => Fixture.TestSqlLoggerFactory.AssertBaseline(expected);
 

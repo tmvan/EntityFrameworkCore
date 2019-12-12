@@ -1136,6 +1136,56 @@ namespace Microsoft.EntityFrameworkCore.Query
             AssertQuery<NullSemanticsEntity1>(es => es.Where(e => !(e.NullableIntA <= i)));
         }
 
+        [ConditionalFact]
+        public virtual void Nullable_column_info_propagates_inside_binary_AndAlso()
+        {
+            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => e.NullableStringA != null && e.NullableStringB != null && e.NullableStringA != e.NullableStringB));
+        }
+
+        [ConditionalFact]
+        public virtual void Nullable_column_info_doesnt_propagate_inside_binary_OrElse()
+        {
+            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => (e.NullableStringA != null || e.NullableStringB != null) && e.NullableStringA != e.NullableStringB));
+        }
+
+        [ConditionalFact]
+        public virtual void Nullable_column_info_propagates_inside_binary_OrElse_when_info_is_duplicated()
+        {
+            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => ((e.NullableStringA != null && e.NullableStringB != null) || (e.NullableStringA != null)) && e.NullableStringA != e.NullableStringB));
+            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => ((e.NullableStringA != null && e.NullableStringB != null) || (e.NullableStringB != null && e.NullableStringA != null)) && e.NullableStringA != e.NullableStringB));
+        }
+
+        [ConditionalFact]
+        public virtual void Nullable_column_info_propagates_inside_conditional()
+        {
+            using var ctx = CreateContext();
+            var query1 = ctx.Entities1.Select(e => e.NullableStringA != null ? e.NullableStringA != e.StringA : e.BoolA).ToList();
+        }
+
+        [ConditionalFact]
+        public virtual void Nullable_column_info_doesnt_propagate_between_projections()
+        {
+            using var ctx = CreateContext();
+            var query = ctx.Entities1.Select(e => new { Foo = e.NullableStringA != null, Bar = e.NullableStringA != e.StringA }).ToList();
+        }
+
+        [ConditionalFact]
+        public virtual void Nullable_column_info_doesnt_propagate_between_different_parts_of_select()
+        {
+            AssertQuery<NullSemanticsEntity1>(es => from e1 in es
+                                                    join e2 in es on e1.NullableBoolA != null equals false
+                                                    where e1.NullableBoolA != e2.NullableBoolB
+                                                    select e1);
+        }
+
+        [ConditionalFact]
+        public virtual void Nullable_column_info_propagation_complex()
+        {
+            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => (e.NullableStringA != null && e.NullableStringB != null && e.NullableStringC != null)
+                && ((e.NullableBoolB != null || e.NullableStringA != null)
+                    && e.NullableBoolB != e.NullableBoolC)));
+        }
+
         protected static TResult Maybe<TResult>(object caller, Func<TResult> expression)
             where TResult : class
         {

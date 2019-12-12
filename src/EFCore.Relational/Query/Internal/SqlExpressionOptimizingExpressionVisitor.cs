@@ -38,11 +38,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 SqlUnaryExpression sqlUnaryExpression => VisitSqlUnaryExpression(sqlUnaryExpression),
                 SqlBinaryExpression sqlBinaryExpression => VisitSqlBinaryExpression(sqlBinaryExpression),
                 SelectExpression selectExpression => VisitSelectExpression(selectExpression),
+                CaseExpression caseExpression => VisitCaseExpression(caseExpression),
                 _ => base.VisitExtension(extensionExpression),
             };
         }
 
-        private Expression VisitSelectExpression(SelectExpression selectExpression)
+        protected virtual Expression VisitSelectExpression(SelectExpression selectExpression)
         {
             var newExpression = base.VisitExtension(selectExpression);
 
@@ -272,6 +273,54 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
 
             return SqlExpressionFactory.MakeBinary(operatorType, left, right, typeMapping);
+        }
+
+        protected virtual Expression VisitCaseExpression(CaseExpression caseExpression)
+        {
+            var operand = (SqlExpression)Visit(caseExpression.Operand);
+            var whenClauses = new List<CaseWhenClause>();
+
+            bool testIsTautology = false;
+            foreach (var whenClause in caseExpression.WhenClauses)
+            {
+                var test = (SqlExpression)Visit(whenClause.Test);
+                var testConstantBoolValue = default(bool?);
+                if (test is SqlConstantExpression testConstant
+                    && testConstant.Value is bool testConstantBool)
+                {
+                    testConstantBoolValue = testConstantBool;
+                }
+
+                // if test evaluates to false we can remove the entire clause
+                if (testConstantBoolValue == false)
+                {
+                    continue;
+                }
+
+                var result = (SqlExpression)Visit(whenClause.Result);
+                whenClauses.Add(new CaseWhenClause(test, result));
+
+                // if test evaluates to true we can remove all clauses that come after
+                if (testConstantBoolValue == true)
+                {
+                    testIsTautology = true;
+                    break;
+                }
+            }
+
+            var elseResult = testIsTautology
+                ? null
+                : (SqlExpression)Visit(caseExpression.ElseResult);
+
+
+            // if there is only one WhenClause and it's test evaluates to true, we can just return it's result directly
+            if (whenClauses.Count == 1
+                && testIsTautology)
+            {
+                return whenClauses[0].Result;
+            }
+
+            return caseExpression.Update(operand, whenClauses, elseResult);
         }
     }
 }
