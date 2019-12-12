@@ -539,35 +539,45 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _canOptimize = _canOptimize && (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso
                 || sqlBinaryExpression.OperatorType == ExpressionType.OrElse);
 
-            var currentNonNullableColumns = _nonNullableColumns.ToList();
+            var currentNonNullableColumnsCount = _nonNullableColumns.Count;
+            //var currentNonNullableColumns = _nonNullableColumns.ToList();
             var newLeft = (SqlExpression)Visit(sqlBinaryExpression.Left);
             var leftNullable = _isNullable;
 
+            var leftNonNullableColumnsCount = _nonNullableColumns.Count;
             var leftNonNullableColumns = _nonNullableColumns.ToList();
 
             _isNullable = false;
-            _nonNullableColumns.Clear();
-            _nonNullableColumns.AddRange(currentNonNullableColumns);
-            if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
+
+            if (sqlBinaryExpression.OperatorType != ExpressionType.AndAlso)
             {
-                _nonNullableColumns.AddRange(leftNonNullableColumns.Except(_nonNullableColumns));
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
             }
+
+            //RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
+            //if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
+            //{
+            //    _nonNullableColumns.AddRange(leftNonNullableColumns.Except(_nonNullableColumns));
+            //}
 
             var newRight = (SqlExpression)Visit(sqlBinaryExpression.Right);
             var rightNullable = _isNullable;
 
-            var rightNonNullableColumns = new List<ColumnExpression>();
-            rightNonNullableColumns.AddRange(_nonNullableColumns);
+            //var rightNonNullableColumns = _nonNullableColumns.ToList();
 
-            _nonNullableColumns.Clear();
+            //_nonNullableColumns.Clear();
             //_nonNullableColumns.AddRange(currentNonNullableColumns);
             if (sqlBinaryExpression.OperatorType == ExpressionType.AndAlso)
             {
-                _nonNullableColumns.AddRange(leftNonNullableColumns.Union(rightNonNullableColumns));
+                // we already have what we need
+             //   _nonNullableColumns.AddRange(leftNonNullableColumns.Union(rightNonNullableColumns));
             }
             else if (sqlBinaryExpression.OperatorType == ExpressionType.OrElse)
             {
-                _nonNullableColumns.AddRange(leftNonNullableColumns.Intersect(rightNonNullableColumns));
+                var intersect = leftNonNullableColumns.Intersect(_nonNullableColumns).ToList();
+                _nonNullableColumns.Clear();
+                _nonNullableColumns.AddRange(intersect);
+                //_nonNullableColumns.AddRange();
             }
             //else if (sqlBinaryExpression.OperatorType == ExpressionType.NotEqual)
             //{
@@ -576,7 +586,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             //}
             else
             {
-                _nonNullableColumns.AddRange(currentNonNullableColumns);
+                RestoreNonNullableColumnsList(currentNonNullableColumnsCount);
+
+                //_nonNullableColumns.AddRange(currentNonNullableColumns);
             }
 
             if (sqlBinaryExpression.OperatorType == ExpressionType.Coalesce)

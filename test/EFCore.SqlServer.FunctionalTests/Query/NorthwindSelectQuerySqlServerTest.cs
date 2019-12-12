@@ -1167,10 +1167,7 @@ CROSS APPLY (
             await base.Select_with_complex_expression_that_can_be_funcletized(async);
 
             AssertSql(
-                @"SELECT CASE
-    WHEN CAST(1 AS bit) = CAST(1 AS bit) THEN 0
-    ELSE CHARINDEX(N'', [c].[ContactName]) - 1
-END
+                @"SELECT 0
 FROM [Customers] AS [c]
 WHERE [c].[CustomerID] = N'ALFKI'");
         }

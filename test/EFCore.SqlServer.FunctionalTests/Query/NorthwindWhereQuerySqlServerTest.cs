@@ -1654,10 +1654,7 @@ WHERE @__p_0 = CAST(1 AS bit)");
             AssertSql(
                 @"SELECT [p].[ProductID], [p].[Discontinued], [p].[ProductName], [p].[SupplierID], [p].[UnitPrice], [p].[UnitsInStock]
 FROM [Products] AS [p]
-WHERE CASE
-    WHEN CAST(1 AS bit) = CAST(1 AS bit) THEN CAST(0 AS bit)
-    ELSE CAST(1 AS bit)
-END = CAST(1 AS bit)");
+WHERE CAST(0 AS bit) = CAST(1 AS bit)");
         }
 
         public override async Task Enclosing_class_settable_member_generates_parameter(bool async)

@@ -1181,8 +1181,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         [ConditionalFact]
         public virtual void Nullable_column_info_propagation_complex()
         {
-            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => (e.NullableStringA != null && e.NullableStringB != null && e.NullableStringC != null)
-                && ((e.NullableBoolB != null || e.NullableStringA != null)
+            AssertQuery<NullSemanticsEntity1>(es => es.Where(e => (e.NullableStringA != null && e.NullableBoolB != null && e.NullableStringC != null)
+                && ((e.NullableStringA != null || e.NullableBoolC != null)
                     && e.NullableBoolB != e.NullableBoolC)));
         }
 
