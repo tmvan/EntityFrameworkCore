@@ -640,10 +640,10 @@ CREATE TABLE [dbo].[Blogs] (
 );
 EXECUTE sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Blog table comment.
 On multiple lines.',
-    @level0type = N'SCHEMA', @level0name = 'dbo', 
+    @level0type = N'SCHEMA', @level0name = 'dbo',
     @level1type = N'TABLE', @level1name = 'Blogs';
 EXECUTE sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Blog.Id column comment.',
-    @level0type = N'SCHEMA', @level0name = 'dbo', 
+    @level0type = N'SCHEMA', @level0name = 'dbo',
     @level1type = N'TABLE', @level1name = 'Blogs',
     @level2type = N'COLUMN', @level2name = 'Id';
 ",
@@ -1862,6 +1862,33 @@ CREATE UNIQUE INDEX IX_UNIQUE ON FilteredIndexTable ( Id2 ) WHERE Id2 > 10;",
                         new List<string> { "Id2" }, index.Columns.Select(ic => ic.Name).ToList());
                 },
                 "DROP TABLE FilteredIndexTable;");
+        }
+
+        [ConditionalFact]
+        public void Index_with_included_properties()
+        {
+            Test(
+                @"
+CREATE TABLE IncludedColumnsIndexTable (
+    Id int,
+    IndexedColumn int NULL,
+    IncludedColumn int NULL
+);
+
+CREATE INDEX IX_IncludedColumns ON IncludedColumnsIndexTable ( IndexedColumn ) INCLUDE ( IncludedColumn );",
+                Enumerable.Empty<string>(),
+                Enumerable.Empty<string>(),
+                dbModel =>
+                {
+                    var index = Assert.Single(dbModel.Tables.Single().Indexes);
+
+                    // ReSharper disable once PossibleNullReferenceException
+                    Assert.Equal("dbo", index.Table.Schema);
+                    Assert.Equal("IncludedColumnsIndexTable", index.Table.Name);
+                    Assert.Equal("IX_IncludedColumns", index.Name);
+                    Assert.Equal("IndexColumn", Assert.Single(index.Columns).Name);
+                },
+                "DROP TABLE IncludedColumnsIndexTable;");
         }
 
         #endregion

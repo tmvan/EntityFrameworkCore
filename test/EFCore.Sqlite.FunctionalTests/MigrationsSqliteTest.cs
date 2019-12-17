@@ -2,1197 +2,423 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using Identity30.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
-using Microsoft.EntityFrameworkCore.TestModels.AspNetIdentity;
-using ModelSnapshot22;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore.Scaffolding;
+using Microsoft.EntityFrameworkCore.Sqlite.Internal;
+using Microsoft.EntityFrameworkCore.Sqlite.Scaffolding.Internal;
+using Microsoft.EntityFrameworkCore.TestUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Xunit.Abstractions;
+
+#nullable enable
 
 namespace Microsoft.EntityFrameworkCore
 {
-    public class MigrationsSqliteTest : MigrationsTestBase<MigrationsSqliteFixture>
+    public class MigrationsSqliteTest : MigrationsTestBase<MigrationsSqliteTest.MigrationsSqliteFixture>
     {
-        public MigrationsSqliteTest(MigrationsSqliteFixture fixture)
+        public MigrationsSqliteTest(MigrationsSqliteFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
+            Fixture.TestSqlLoggerFactory.Clear();
+            //Fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
         }
 
-        public override void Can_generate_migration_from_initial_database_to_initial()
+        public override Task CreateIndexOperation_with_filter_where_clause()
+            => Test(
+                builder => builder.Entity(
+                    "People", e =>
+                    {
+                        e.Property<int>("Id");
+                        e.Property<string>("Name");
+                    }),
+                builder => { },
+                builder => builder.Entity("People").HasIndex("Name").HasFilter($"{DelimitIdentifier("Name")} IS NOT NULL"),
+                // Reverse engineering of index filters isn't supported in SQLite
+                model => Assert.Null(model.Tables.Single().Indexes.Single().Filter));
+
+        public override Task CreateIndexOperation_with_filter_where_clause_and_is_unique()
+            => Test(
+                builder => builder.Entity(
+                    "People", e =>
+                    {
+                        e.Property<int>("Id");
+                        e.Property<string>("Name");
+                    }),
+                builder => { },
+                builder => builder.Entity("People").HasIndex("Name").IsUnique()
+                    .HasFilter($"{DelimitIdentifier("Name")} IS NOT NULL AND {DelimitIdentifier("Name")} <> ''"),
+                // Reverse engineering of index filters isn't supported in SQLite
+                model => Assert.Null(model.Tables.Single().Indexes.Single().Filter));
+
+        public override Task CreateIndexOperation_with_where_clauses()
+            => Test(
+                builder => builder.Entity(
+                    "People", e =>
+                    {
+                        e.Property<int>("Id");
+                        e.Property<int>("Age");
+                    }),
+                builder => { },
+                builder => builder.Entity("People").HasIndex("Age").HasFilter($"{DelimitIdentifier("Age")} > 18"),
+                // Reverse engineering of index filters isn't supported in SQLite
+                model => Assert.Null(model.Tables.Single().Indexes.Single().Filter));
+
+        public override async Task RenameColumnOperation()
         {
-            base.Can_generate_migration_from_initial_database_to_initial();
+            await base.RenameColumnOperation();
 
-            Assert.Equal(
-                @"CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
-    ""MigrationId"" TEXT NOT NULL CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY,
-    ""ProductVersion"" TEXT NOT NULL
-);
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
+            AssertSql(
+                @"ALTER TABLE ""People"" RENAME COLUMN ""SomeColumn"" TO ""somecolumn"";");
         }
 
-        public override void Can_generate_no_migration_script()
+        public override async Task RenameIndexOperation()
         {
-            base.Can_generate_no_migration_script();
+            await base.RenameIndexOperation();
 
-            Assert.Equal(
-                @"CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
-    ""MigrationId"" TEXT NOT NULL CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY,
-    ""ProductVersion"" TEXT NOT NULL
-);
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
+            AssertSql(
+                @"DROP INDEX ""Foo"";
+CREATE INDEX ""foo"" ON ""People"" (""FirstName"");");
         }
 
-        public override void Can_generate_up_scripts()
+        public override async Task AddColumnOperation_with_defaultValue_datetime()
         {
-            base.Can_generate_up_scripts();
+            await base.AddColumnOperation_with_defaultValue_datetime();
 
-            Assert.Equal(
-                @"CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
-    ""MigrationId"" TEXT NOT NULL CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY,
-    ""ProductVersion"" TEXT NOT NULL
-);
-
-CREATE TABLE ""Table1"" (
-    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_Table1"" PRIMARY KEY,
-    ""Foo"" INTEGER NOT NULL
-);
-
-INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
-VALUES ('00000000000001_Migration1', '7.0.0-test');
-
-ALTER TABLE ""Table1"" RENAME COLUMN ""Foo"" TO ""Bar"";
-
-INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
-VALUES ('00000000000002_Migration2', '7.0.0-test');
-
-INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
-VALUES ('00000000000003_Migration3', '7.0.0-test');
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
+            AssertSql(
+                @"ALTER TABLE ""People"" ADD ""Birthday"" TEXT NOT NULL DEFAULT '2015-04-12 17:05:00';");
         }
 
-        public override void Can_generate_one_up_script()
+        public override async Task AddColumnOperation_with_maxLength()
         {
-            base.Can_generate_one_up_script();
+            await base.AddColumnOperation_with_maxLength();
 
-            Assert.Equal(
-                @"ALTER TABLE ""Table1"" RENAME COLUMN ""Foo"" TO ""Bar"";
-
-INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
-VALUES ('00000000000002_Migration2', '7.0.0-test');
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
+            // See issue #3698
+            AssertSql(
+                @"ALTER TABLE ""People"" ADD ""Name"" TEXT NULL;");
         }
 
-        public override void Can_generate_up_script_using_names()
+        public override Task AddColumnOperation_with_computedSql()
+            => AssertNotSupportedAsync(base.AddColumnOperation_with_computedSql, SqliteStrings.ComputedColumnsNotSupported);
+
+        public override async Task AddColumnOperation_with_defaultValueSql()
         {
-            base.Can_generate_up_script_using_names();
-
-            Assert.Equal(
-                @"ALTER TABLE ""Table1"" RENAME COLUMN ""Foo"" TO ""Bar"";
-
-INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
-VALUES ('00000000000002_Migration2', '7.0.0-test');
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
+            var ex = await Assert.ThrowsAsync<SqliteException>(base.AddColumnOperation_with_defaultValueSql);
+            Assert.Contains("Cannot add a column with non-constant default", ex.Message);
         }
 
-        public override void Can_generate_idempotent_up_scripts()
+        // In Sqlite, comments are only generated when creating a table
+        public override async Task AddColumnOperation_with_comment()
         {
-            Assert.Throws<NotSupportedException>(() => base.Can_generate_idempotent_up_scripts());
-        }
-
-        public override void Can_generate_down_scripts()
-        {
-            base.Can_generate_down_scripts();
-
-            Assert.Equal(
-                @"ALTER TABLE ""Table1"" RENAME COLUMN ""Bar"" TO ""Foo"";
-
-DELETE FROM ""__EFMigrationsHistory""
-WHERE ""MigrationId"" = '00000000000002_Migration2';
-
-DROP TABLE ""Table1"";
-
-DELETE FROM ""__EFMigrationsHistory""
-WHERE ""MigrationId"" = '00000000000001_Migration1';
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
-        }
-
-        public override void Can_generate_one_down_script()
-        {
-            base.Can_generate_one_down_script();
-
-            Assert.Equal(
-                @"ALTER TABLE ""Table1"" RENAME COLUMN ""Bar"" TO ""Foo"";
-
-DELETE FROM ""__EFMigrationsHistory""
-WHERE ""MigrationId"" = '00000000000002_Migration2';
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
-        }
-
-        public override void Can_generate_down_script_using_names()
-        {
-            base.Can_generate_down_script_using_names();
-
-            Assert.Equal(
-                @"ALTER TABLE ""Table1"" RENAME COLUMN ""Bar"" TO ""Foo"";
-
-DELETE FROM ""__EFMigrationsHistory""
-WHERE ""MigrationId"" = '00000000000002_Migration2';
-
-",
-                Sql,
-                ignoreLineEndingDifferences: true);
-        }
-
-        public override void Can_generate_idempotent_down_scripts()
-        {
-            Assert.Throws<NotSupportedException>(() => base.Can_generate_idempotent_down_scripts());
-        }
-
-        public override void Can_get_active_provider()
-        {
-            base.Can_get_active_provider();
-
-            Assert.Equal("Microsoft.EntityFrameworkCore.Sqlite", ActiveProvider);
-        }
-
-        protected override void AssertFirstMigration(DbConnection connection)
-        {
-            var sql = GetDatabaseSchemaAsync(connection);
-            Assert.Equal(
-                @"
-CreatedTable
-    Id INTEGER NOT NULL
-    ColumnWithDefaultToDrop INTEGER NULL DEFAULT 0
-    ColumnWithDefaultToAlter INTEGER NULL DEFAULT 1
-
-Foos
-    Id INTEGER NOT NULL
-
-sqlite_sequence
-    name  NULL
-    seq  NULL
-",
-                sql,
-                ignoreLineEndingDifferences: true);
-        }
-
-        protected override void BuildSecondMigration(MigrationBuilder migrationBuilder)
-        {
-            base.BuildSecondMigration(migrationBuilder);
-
-            for (var i = migrationBuilder.Operations.Count - 1; i >= 0; i--)
-            {
-                var operation = migrationBuilder.Operations[i];
-                if (operation is AlterColumnOperation
-                    || operation is DropColumnOperation)
+            await Test(
+                builder => builder.Entity("People").Property<int>("Id"),
+                builder => { },
+                builder => builder.Entity("People").Property<string>("FullName").HasComment("My comment"),
+                model =>
                 {
-                    migrationBuilder.Operations.RemoveAt(i);
-                }
+                    var table = Assert.Single(model.Tables);
+                    var column = Assert.Single(table.Columns, c => c.Name == "FullName");
+                    Assert.Null(column.Comment);
+                });
+
+            AssertSql(
+                @"ALTER TABLE ""People"" ADD ""FullName"" TEXT NULL;");
+        }
+
+        public override Task AlterColumnOperation_make_required()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_make_required, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AlterColumnOperation_make_computed()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_make_computed, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AlterColumnOperation_change_computed_with_index()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_change_computed_with_index, SqliteStrings.ComputedColumnsNotSupported);
+
+        public override Task AlterColumnOperation_make_required_with_composite_index()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_make_required_with_composite_index, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AlterColumnOperation_make_required_with_index()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_make_required_with_index, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AlterColumnOperation_add_comment()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_add_comment, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AlterColumnOperation_change_comment()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_change_comment, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AlterColumnOperation_remove_comment()
+            => AssertNotSupportedAsync(base.AlterColumnOperation_remove_comment, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task DropColumnOperation()
+            => AssertNotSupportedAsync(base.DropColumnOperation, SqliteStrings.InvalidMigrationOperation("DropColumnOperation"));
+
+        public override Task DropColumnOperation_primary_key()
+            => AssertNotSupportedAsync(base.DropColumnOperation_primary_key, SqliteStrings.InvalidMigrationOperation("DropPrimaryKeyOperation"));
+
+        public override Task AddForeignKeyOperation()
+            => AssertNotSupportedAsync(base.AddForeignKeyOperation, SqliteStrings.InvalidMigrationOperation("AddForeignKeyOperation"));
+
+        public override Task DropForeignKeyOperation()
+            => AssertNotSupportedAsync(base.DropForeignKeyOperation, SqliteStrings.InvalidMigrationOperation("DropForeignKeyOperation"));
+
+        public override Task AddForeignKeyOperation_with_name()
+            => AssertNotSupportedAsync(base.AddForeignKeyOperation_with_name, SqliteStrings.InvalidMigrationOperation("AddForeignKeyOperation"));
+
+        public override Task AddPrimaryKeyOperation()
+            => AssertNotSupportedAsync(base.AddPrimaryKeyOperation, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task AddPrimaryKeyOperation_composite_with_name()
+            => AssertNotSupportedAsync(base.AddPrimaryKeyOperation_composite_with_name, SqliteStrings.InvalidMigrationOperation("AlterColumnOperation"));
+
+        public override Task DropPrimaryKeyOperation()
+            => AssertNotSupportedAsync(base.DropPrimaryKeyOperation, SqliteStrings.InvalidMigrationOperation("DropPrimaryKeyOperation"));
+
+        public override Task AddUniqueConstraintOperation()
+            => AssertNotSupportedAsync(base.AddUniqueConstraintOperation, SqliteStrings.InvalidMigrationOperation("AddUniqueConstraintOperation"));
+
+        public override Task AddUniqueConstraintOperation_composite_with_name()
+            => AssertNotSupportedAsync(base.AddUniqueConstraintOperation_composite_with_name, SqliteStrings.InvalidMigrationOperation("AddUniqueConstraintOperation"));
+
+        public override Task DropUniqueConstraintOperation()
+            => AssertNotSupportedAsync(base.DropUniqueConstraintOperation, SqliteStrings.InvalidMigrationOperation("DropUniqueConstraintOperation"));
+
+        public override Task CreateSequenceOperation()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override Task CreateSequenceOperation_all_settings()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override Task AlterSequenceOperation_all_settings()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override Task AlterSequenceOperation_increment_by()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override Task RenameSequenceOperation()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override Task MoveSequenceOperation()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override Task DropSequenceOperation()
+            => AssertNotSupportedAsync(base.CreateSequenceOperation, SqliteStrings.SequencesNotSupported);
+
+        public override async Task CreateTableOperation()
+        {
+            await base.CreateTableOperation();
+
+            AssertSql(
+                @"CREATE TABLE ""People"" (
+    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_People"" PRIMARY KEY AUTOINCREMENT,
+    ""Name"" TEXT NULL
+);");
+        }
+
+        // SQLite does not support schemas, check constraints, etc.
+        public override Task CreateTableOperation_all_settings() => Task.CompletedTask;
+
+        public async Task CreateTableOperation_old_autoincrement_annotation()
+        {
+            await Test(
+                builder => { },
+                builder => builder.Entity("People", e =>
+                {
+                    e.Property<int>("Id");
+                    e.Property<string>("Name").HasComment("Column comment");
+                    e.HasComment("Table comment");
+                }),
+                model =>
+                {
+                    // Reverse-engineering of comments isn't supported in Sqlite
+                    var table = Assert.Single(model.Tables);
+                    Assert.Null(table.Comment);
+                    var column = Assert.Single(table.Columns, c => c.Name == "Name");
+                    Assert.Null(column.Comment);
+                });
+
+            AssertSql(
+                @"CREATE TABLE ""People"" (
+    -- Table comment
+
+    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_People"" PRIMARY KEY AUTOINCREMENT,
+
+    -- Column comment
+    ""Name"" TEXT NULL
+);");
+        }
+
+        public override async Task CreateTableOperation_comments()
+        {
+            await Test(
+                builder => { },
+                builder => builder.Entity("People", e =>
+                {
+                    e.Property<int>("Id");
+                    e.Property<string>("Name").HasComment("Column comment");
+                    e.HasComment("Table comment");
+                }),
+                model =>
+                {
+                    // Reverse-engineering of comments isn't supported in Sqlite
+                    var table = Assert.Single(model.Tables);
+                    Assert.Null(table.Comment);
+                    var column = Assert.Single(table.Columns, c => c.Name == "Name");
+                    Assert.Null(column.Comment);
+                });
+
+            AssertSql(
+                @"CREATE TABLE ""People"" (
+    -- Table comment
+
+    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_People"" PRIMARY KEY AUTOINCREMENT,
+
+    -- Column comment
+    ""Name"" TEXT NULL
+);");
+        }
+
+        [ConditionalFact]
+        public async Task CreateTableOperation_has_multiline_table_comment()
+        {
+            await Test(
+                builder => { },
+                builder => builder.Entity("People", e =>
+                {
+                    e.Property<int>("Id");
+                    e.Property<string>("Name");
+                    e.HasComment(@"This is a multi-line
+table comment.
+More information can
+be found in the docs.");
+                }),
+                model =>
+                {
+                    // Reverse-engineering of comments isn't supported in Sqlite
+                    var table = Assert.Single(model.Tables);
+                    Assert.Null(table.Comment);
+                    var column = Assert.Single(table.Columns, c => c.Name == "Name");
+                    Assert.Null(column.Comment);
+                });
+
+            AssertSql(
+                @"CREATE TABLE ""People"" (
+    -- This is a multi-line
+    -- table comment.
+    -- More information can
+    -- be found in the docs.
+
+    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_People"" PRIMARY KEY AUTOINCREMENT,
+    ""Name"" TEXT NULL
+);");
+        }
+
+        [ConditionalFact]
+        public async Task CreateTableOperation_has_multiline_column_comment()
+        {
+            await Test(
+                builder => { },
+                builder => builder.Entity("People", e =>
+                {
+                    e.Property<int>("Id");
+                    e.Property<string>("Name").HasComment(@"This is a multi-line
+column comment.
+More information can
+be found in the docs.");
+                }),
+                model =>
+                {
+                    // Reverse-engineering of comments isn't supported in Sqlite
+                    var table = Assert.Single(model.Tables);
+                    Assert.Null(table.Comment);
+                    var column = Assert.Single(table.Columns, c => c.Name == "Name");
+                    Assert.Null(column.Comment);
+                });
+
+            AssertSql(
+                @"CREATE TABLE ""People"" (
+    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_People"" PRIMARY KEY AUTOINCREMENT,
+
+    -- This is a multi-line
+    -- column comment.
+    -- More information can
+    -- be found in the docs.
+    ""Name"" TEXT NULL
+);");
+        }
+
+        // In Sqlite, comments are only generated when creating a table
+        public override async Task AlterTableOperation_add_comment()
+        {
+            await Test(
+                builder => builder.Entity("People").Property<int>("Id"),
+                builder => builder.Entity("People").HasComment("Table comment").Property<int>("Id"),
+                model => Assert.Null(Assert.Single(model.Tables).Comment));
+
+            AssertSql();
+        }
+
+        // In Sqlite, comments are only generated when creating a table
+        public override async Task AlterTableOperation_change_comment()
+        {
+            await Test(
+                builder => builder.Entity("People").HasComment("Table comment1").Property<int>("Id"),
+                builder => builder.Entity("People").HasComment("Table comment2").Property<int>("Id"),
+                model => Assert.Null(Assert.Single(model.Tables).Comment));
+
+            AssertSql();
+        }
+
+        public override Task RenameTableOperation()
+            => AssertNotSupportedAsync(base.RenameTableOperation, SqliteStrings.InvalidMigrationOperation("DropPrimaryKeyOperation"));
+
+        // SQLite does not support schemas.
+        public override Task MoveTableOperation()
+            => Test(
+                builder => builder.Entity("TestTable").Property<int>("Id"),
+                builder => { },
+                builder => builder.Entity("TestTable").ToTable("TestTable", "TestTableSchema"),
+                model =>
+                {
+                    var table = Assert.Single(model.Tables);
+                    Assert.Null(table.Schema);
+                    Assert.Equal("TestTable", table.Name);
+                });
+
+        public override Task CreateCheckConstraintOperation_with_name()
+            => AssertNotSupportedAsync(base.CreateCheckConstraintOperation_with_name, SqliteStrings.InvalidMigrationOperation("CreateCheckConstraintOperation"));
+
+        public override Task DropCheckConstraintOperation()
+            => AssertNotSupportedAsync(base.DropCheckConstraintOperation, SqliteStrings.InvalidMigrationOperation("DropCheckConstraintOperation"));
+
+        // SQLite does not support schemas
+        public override Task CreateSchemaOperation()
+            => Test(
+                builder => { },
+                builder => builder.Entity("People")
+                    .ToTable("People", "SomeOtherSchema")
+                    .Property<int>("Id"),
+                model => Assert.Null(Assert.Single(model.Tables).Schema));
+
+        protected virtual async Task AssertNotSupportedAsync(Func<Task> action, string? message = null)
+        {
+            var ex = await Assert.ThrowsAsync<NotSupportedException>(action);
+            if (message != null)
+            {
+                Assert.Equal(message, ex.Message);
             }
         }
 
-        protected override void AssertSecondMigration(DbConnection connection)
+        public class MigrationsSqliteFixture : MigrationsFixtureBase
         {
-            var sql = GetDatabaseSchemaAsync(connection);
-            Assert.Equal(
-                @"
-CreatedTable
-    Id INTEGER NOT NULL
-    ColumnWithDefaultToDrop INTEGER NULL DEFAULT 0
-    ColumnWithDefaultToAlter INTEGER NULL DEFAULT 1
-
-Foos
-    Id INTEGER NOT NULL
-
-sqlite_sequence
-    name  NULL
-    seq  NULL
-",
-                sql,
-                ignoreLineEndingDifferences: true);
-        }
-
-        private string GetDatabaseSchemaAsync(DbConnection connection)
-        {
-            var builder = new IndentedStringBuilder();
-
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = @"
-                    SELECT name
-                    FROM sqlite_master
-                    WHERE type = 'table'
-                    ORDER BY name;";
-
-                var tables = new List<string>();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        tables.Add(reader.GetString(0));
-                    }
-                }
-
-                var first = true;
-                foreach (var table in tables)
-                {
-                    if (first)
-                    {
-                        first = false;
-                    }
-                    else
-                    {
-                        builder.DecrementIndent();
-                    }
-
-                    builder
-                        .AppendLine()
-                        .AppendLine(table)
-                        .IncrementIndent();
-
-                    command.CommandText = "PRAGMA table_info(" + table + ");";
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        builder
-                            .Append(reader[1]) // Name
-                            .Append(" ")
-                            .Append(reader[2]) // Type
-                            .Append(" ")
-                            .Append(reader.GetBoolean(3) ? "NOT NULL" : "NULL");
-
-                        if (!reader.IsDBNull(4))
-                        {
-                            builder
-                                .Append(" DEFAULT ")
-                                .Append(reader[4]);
-                        }
-
-                        builder.AppendLine();
-                    }
-                }
-            }
-
-            return builder.ToString();
-        }
-
-        public override void Can_diff_against_2_2_model()
-        {
-            using var context = new BloggingContext();
-            DiffSnapshot(new BloggingContextModelSnapshot22(), context);
-        }
-
-        public class BloggingContextModelSnapshot22 : ModelSnapshot
-        {
-            protected override void BuildModel(ModelBuilder modelBuilder)
-            {
-#pragma warning disable 612, 618
-                modelBuilder
-                    .HasAnnotation("ProductVersion", "2.2.4-servicing-10062");
-
-                modelBuilder.Entity(
-                    "ModelSnapshot22.Blog", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("Name");
-
-                        b.HasKey("Id");
-
-                        b.ToTable("Blogs");
-                    });
-
-                modelBuilder.Entity(
-                    "ModelSnapshot22.Post", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<int?>("BlogId");
-
-                        b.Property<string>("Content");
-
-                        b.Property<DateTime>("EditDate");
-
-                        b.Property<string>("Title");
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("BlogId");
-
-                        b.ToTable("Post");
-                    });
-
-                modelBuilder.Entity(
-                    "ModelSnapshot22.Post", b =>
-                    {
-                        b.HasOne("ModelSnapshot22.Blog", "Blog")
-                            .WithMany("Posts")
-                            .HasForeignKey("BlogId");
-                    });
-#pragma warning restore 612, 618
-            }
-        }
-
-        public class AspNetIdentity21ModelSnapshot : ModelSnapshot
-        {
-            protected override void BuildModel(ModelBuilder modelBuilder)
-            {
-#pragma warning disable 612, 618
-                modelBuilder
-                    .HasAnnotation("ProductVersion", "2.1.0");
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                    {
-                        b.Property<string>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("ConcurrencyStamp")
-                            .IsConcurrencyToken();
-
-                        b.Property<string>("Name")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("NormalizedName")
-                            .HasMaxLength(256);
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("NormalizedName")
-                            .IsUnique()
-                            .HasName("RoleNameIndex");
-
-                        b.ToTable("AspNetRoles");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("ClaimType");
-
-                        b.Property<string>("ClaimValue");
-
-                        b.Property<string>("RoleId")
-                            .IsRequired();
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("RoleId");
-
-                        b.ToTable("AspNetRoleClaims");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                    {
-                        b.Property<string>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<int>("AccessFailedCount");
-
-                        b.Property<string>("ConcurrencyStamp")
-                            .IsConcurrencyToken();
-
-                        b.Property<string>("Email")
-                            .HasMaxLength(256);
-
-                        b.Property<bool>("EmailConfirmed");
-
-                        b.Property<bool>("LockoutEnabled");
-
-                        b.Property<DateTimeOffset?>("LockoutEnd");
-
-                        b.Property<string>("NormalizedEmail")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("NormalizedUserName")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("PasswordHash");
-
-                        b.Property<string>("PhoneNumber");
-
-                        b.Property<bool>("PhoneNumberConfirmed");
-
-                        b.Property<string>("SecurityStamp");
-
-                        b.Property<bool>("TwoFactorEnabled");
-
-                        b.Property<string>("UserName")
-                            .HasMaxLength(256);
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("NormalizedEmail")
-                            .HasName("EmailIndex");
-
-                        b.HasIndex("NormalizedUserName")
-                            .IsUnique()
-                            .HasName("UserNameIndex");
-
-                        b.ToTable("AspNetUsers");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("ClaimType");
-
-                        b.Property<string>("ClaimValue");
-
-                        b.Property<string>("UserId")
-                            .IsRequired();
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("UserId");
-
-                        b.ToTable("AspNetUserClaims");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                    {
-                        b.Property<string>("LoginProvider")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("ProviderKey")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("ProviderDisplayName");
-
-                        b.Property<string>("UserId")
-                            .IsRequired();
-
-                        b.HasKey("LoginProvider", "ProviderKey");
-
-                        b.HasIndex("UserId");
-
-                        b.ToTable("AspNetUserLogins");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                    {
-                        b.Property<string>("UserId");
-
-                        b.Property<string>("RoleId");
-
-                        b.HasKey("UserId", "RoleId");
-
-                        b.HasIndex("RoleId");
-
-                        b.ToTable("AspNetUserRoles");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                    {
-                        b.Property<string>("UserId");
-
-                        b.Property<string>("LoginProvider")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("Name")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("Value");
-
-                        b.HasKey("UserId", "LoginProvider", "Name");
-
-                        b.ToTable("AspNetUserTokens");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
-                            .WithMany()
-                            .HasForeignKey("RoleId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
-                            .WithMany()
-                            .HasForeignKey("RoleId")
-                            .OnDelete(DeleteBehavior.Cascade);
-
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-#pragma warning restore 612, 618
-            }
-        }
-
-        public override void Can_diff_against_2_1_ASP_NET_Identity_model()
-        {
-            using var context = new ApplicationDbContext();
-            DiffSnapshot(new AspNetIdentity21ModelSnapshot(), context);
-        }
-
-        public class AspNetIdentity22ModelSnapshot : ModelSnapshot
-        {
-            protected override void BuildModel(ModelBuilder modelBuilder)
-            {
-#pragma warning disable 612, 618
-                modelBuilder
-                    .HasAnnotation("ProductVersion", "2.2.0-preview1");
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                    {
-                        b.Property<string>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("ConcurrencyStamp")
-                            .IsConcurrencyToken();
-
-                        b.Property<string>("Name")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("NormalizedName")
-                            .HasMaxLength(256);
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("NormalizedName")
-                            .IsUnique()
-                            .HasName("RoleNameIndex");
-
-                        b.ToTable("AspNetRoles");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("ClaimType");
-
-                        b.Property<string>("ClaimValue");
-
-                        b.Property<string>("RoleId")
-                            .IsRequired();
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("RoleId");
-
-                        b.ToTable("AspNetRoleClaims");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                    {
-                        b.Property<string>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<int>("AccessFailedCount");
-
-                        b.Property<string>("ConcurrencyStamp")
-                            .IsConcurrencyToken();
-
-                        b.Property<string>("Email")
-                            .HasMaxLength(256);
-
-                        b.Property<bool>("EmailConfirmed");
-
-                        b.Property<bool>("LockoutEnabled");
-
-                        b.Property<DateTimeOffset?>("LockoutEnd");
-
-                        b.Property<string>("NormalizedEmail")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("NormalizedUserName")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("PasswordHash");
-
-                        b.Property<string>("PhoneNumber");
-
-                        b.Property<bool>("PhoneNumberConfirmed");
-
-                        b.Property<string>("SecurityStamp");
-
-                        b.Property<bool>("TwoFactorEnabled");
-
-                        b.Property<string>("UserName")
-                            .HasMaxLength(256);
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("NormalizedEmail")
-                            .HasName("EmailIndex");
-
-                        b.HasIndex("NormalizedUserName")
-                            .IsUnique()
-                            .HasName("UserNameIndex");
-
-                        b.ToTable("AspNetUsers");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd();
-
-                        b.Property<string>("ClaimType");
-
-                        b.Property<string>("ClaimValue");
-
-                        b.Property<string>("UserId")
-                            .IsRequired();
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("UserId");
-
-                        b.ToTable("AspNetUserClaims");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                    {
-                        b.Property<string>("LoginProvider")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("ProviderKey")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("ProviderDisplayName");
-
-                        b.Property<string>("UserId")
-                            .IsRequired();
-
-                        b.HasKey("LoginProvider", "ProviderKey");
-
-                        b.HasIndex("UserId");
-
-                        b.ToTable("AspNetUserLogins");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                    {
-                        b.Property<string>("UserId");
-
-                        b.Property<string>("RoleId");
-
-                        b.HasKey("UserId", "RoleId");
-
-                        b.HasIndex("RoleId");
-
-                        b.ToTable("AspNetUserRoles");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                    {
-                        b.Property<string>("UserId");
-
-                        b.Property<string>("LoginProvider")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("Name")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("Value");
-
-                        b.HasKey("UserId", "LoginProvider", "Name");
-
-                        b.ToTable("AspNetUserTokens");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
-                            .WithMany()
-                            .HasForeignKey("RoleId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
-                            .WithMany()
-                            .HasForeignKey("RoleId")
-                            .OnDelete(DeleteBehavior.Cascade);
-
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser")
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade);
-                    });
-#pragma warning restore 612, 618
-            }
-        }
-
-        public override void Can_diff_against_2_2_ASP_NET_Identity_model()
-        {
-            using var context = new ApplicationDbContext();
-            DiffSnapshot(new AspNetIdentity22ModelSnapshot(), context);
-        }
-
-        public class AspNetIdentity30ModelSnapshot : ModelSnapshot
-        {
-            protected override void BuildModel(ModelBuilder modelBuilder)
-            {
-#pragma warning disable 612, 618
-                modelBuilder
-                    .HasAnnotation("ProductVersion", "3.0.0");
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                    {
-                        b.Property<string>("Id")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("ConcurrencyStamp")
-                            .IsConcurrencyToken()
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("Name")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("NormalizedName")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(256);
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("NormalizedName")
-                            .IsUnique()
-                            .HasName("RoleNameIndex");
-
-                        b.ToTable("AspNetRoles");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd()
-                            .HasColumnType("INTEGER");
-
-                        b.Property<string>("ClaimType")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("ClaimValue")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("RoleId")
-                            .IsRequired()
-                            .HasColumnType("TEXT");
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("RoleId");
-
-                        b.ToTable("AspNetRoleClaims");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                    {
-                        b.Property<string>("Id")
-                            .HasColumnType("TEXT");
-
-                        b.Property<int>("AccessFailedCount")
-                            .HasColumnType("INTEGER");
-
-                        b.Property<string>("ConcurrencyStamp")
-                            .IsConcurrencyToken()
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("Email")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(256);
-
-                        b.Property<bool>("EmailConfirmed")
-                            .HasColumnType("INTEGER");
-
-                        b.Property<bool>("LockoutEnabled")
-                            .HasColumnType("INTEGER");
-
-                        b.Property<DateTimeOffset?>("LockoutEnd")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("NormalizedEmail")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("NormalizedUserName")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(256);
-
-                        b.Property<string>("PasswordHash")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("PhoneNumber")
-                            .HasColumnType("TEXT");
-
-                        b.Property<bool>("PhoneNumberConfirmed")
-                            .HasColumnType("INTEGER");
-
-                        b.Property<string>("SecurityStamp")
-                            .HasColumnType("TEXT");
-
-                        b.Property<bool>("TwoFactorEnabled")
-                            .HasColumnType("INTEGER");
-
-                        b.Property<string>("UserName")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(256);
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("NormalizedEmail")
-                            .HasName("EmailIndex");
-
-                        b.HasIndex("NormalizedUserName")
-                            .IsUnique()
-                            .HasName("UserNameIndex");
-
-                        b.ToTable("AspNetUsers");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                    {
-                        b.Property<int>("Id")
-                            .ValueGeneratedOnAdd()
-                            .HasColumnType("INTEGER");
-
-                        b.Property<string>("ClaimType")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("ClaimValue")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("UserId")
-                            .IsRequired()
-                            .HasColumnType("TEXT");
-
-                        b.HasKey("Id");
-
-                        b.HasIndex("UserId");
-
-                        b.ToTable("AspNetUserClaims");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                    {
-                        b.Property<string>("LoginProvider")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("ProviderKey")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("ProviderDisplayName")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("UserId")
-                            .IsRequired()
-                            .HasColumnType("TEXT");
-
-                        b.HasKey("LoginProvider", "ProviderKey");
-
-                        b.HasIndex("UserId");
-
-                        b.ToTable("AspNetUserLogins");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                    {
-                        b.Property<string>("UserId")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("RoleId")
-                            .HasColumnType("TEXT");
-
-                        b.HasKey("UserId", "RoleId");
-
-                        b.HasIndex("RoleId");
-
-                        b.ToTable("AspNetUserRoles");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                    {
-                        b.Property<string>("UserId")
-                            .HasColumnType("TEXT");
-
-                        b.Property<string>("LoginProvider")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("Name")
-                            .HasColumnType("TEXT")
-                            .HasMaxLength(128);
-
-                        b.Property<string>("Value")
-                            .HasColumnType("TEXT");
-
-                        b.HasKey("UserId", "LoginProvider", "Name");
-
-                        b.ToTable("AspNetUserTokens");
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
-                            .WithMany()
-                            .HasForeignKey("RoleId")
-                            .OnDelete(DeleteBehavior.Cascade)
-                            .IsRequired();
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade)
-                            .IsRequired();
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade)
-                            .IsRequired();
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
-                            .WithMany()
-                            .HasForeignKey("RoleId")
-                            .OnDelete(DeleteBehavior.Cascade)
-                            .IsRequired();
-
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade)
-                            .IsRequired();
-                    });
-
-                modelBuilder.Entity(
-                    "Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                    {
-                        b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                            .WithMany()
-                            .HasForeignKey("UserId")
-                            .OnDelete(DeleteBehavior.Cascade)
-                            .IsRequired();
-                    });
-#pragma warning restore 612, 618
-            }
-        }
-
-        public override void Can_diff_against_3_0_ASP_NET_Identity_model()
-        {
-            using var context = new ApplicationDbContext();
-            DiffSnapshot(new AspNetIdentity30ModelSnapshot(), context);
-        }
-    }
-}
-
-namespace ModelSnapshot22
-{
-    public class Blog
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-
-        public ICollection<Post> Posts { get; set; }
-    }
-
-    public class Post
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public DateTime EditDate { get; set; }
-
-        public Blog Blog { get; set; }
-    }
-
-    public class BloggingContext : DbContext
-    {
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite("DataSource=Test.db");
-
-        public DbSet<Blog> Blogs { get; set; }
-    }
-}
-
-namespace Identity30.Data
-{
-    public class ApplicationDbContext : IdentityDbContext
-    {
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite("DataSource=Test.db");
-
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
-
-            builder.Entity<IdentityUser>(
-                b =>
-                {
-                    b.HasIndex(u => u.NormalizedUserName).HasName("UserNameIndex").IsUnique();
-                    b.HasIndex(u => u.NormalizedEmail).HasName("EmailIndex");
-                    b.ToTable("AspNetUsers");
-                });
-
-            builder.Entity<IdentityUserClaim<string>>(
-                b =>
-                {
-                    b.ToTable("AspNetUserClaims");
-                });
-
-            builder.Entity<IdentityUserLogin<string>>(
-                b =>
-                {
-                    b.ToTable("AspNetUserLogins");
-                });
-
-            builder.Entity<IdentityUserToken<string>>(
-                b =>
-                {
-                    b.ToTable("AspNetUserTokens");
-                });
-
-            builder.Entity<IdentityRole>(
-                b =>
-                {
-                    b.HasIndex(r => r.NormalizedName).HasName("RoleNameIndex").IsUnique();
-                    b.ToTable("AspNetRoles");
-                });
-
-            builder.Entity<IdentityRoleClaim<string>>(
-                b =>
-                {
-                    b.ToTable("AspNetRoleClaims");
-                });
-
-            builder.Entity<IdentityUserRole<string>>(
-                b =>
-                {
-                    b.ToTable("AspNetUserRoles");
-                });
+            protected override string StoreName { get; } = nameof(MigrationsSqliteTest);
+            protected override ITestStoreFactory TestStoreFactory => SqliteTestStoreFactory.Instance;
+            public override TestHelpers TestHelpers => SqliteTestHelpers.Instance;
+
+            protected override IServiceCollection AddServices(IServiceCollection serviceCollection)
+                => base.AddServices(serviceCollection)
+                    .AddScoped<IDatabaseModelFactory, SqliteDatabaseModelFactory>();
         }
     }
 }

@@ -2,15 +2,13 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Sqlite.Internal;
 using Microsoft.EntityFrameworkCore.Sqlite.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Xunit;
 
-// ReSharper disable InconsistentNaming
-namespace Microsoft.EntityFrameworkCore
+namespace Microsoft.EntityFrameworkCore.Migrations
 {
     public class SqliteMigrationSqlGeneratorTest : MigrationSqlGeneratorTestBase
     {

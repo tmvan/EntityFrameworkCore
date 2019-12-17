@@ -4,15 +4,12 @@
 using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-// ReSharper disable ClassNeverInstantiated.Local
-// ReSharper disable InconsistentNaming
-namespace Microsoft.EntityFrameworkCore
+namespace Microsoft.EntityFrameworkCore.Migrations
 {
     public abstract class MigrationSqlGeneratorTestBase
     {
