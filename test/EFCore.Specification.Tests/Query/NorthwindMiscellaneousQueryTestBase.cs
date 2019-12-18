@@ -3300,7 +3300,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             using var context = CreateContext();
             var orders
                 = (from o in context.Orders.OrderBy(o => o.OrderID).Take(1)
-                   // ReSharper disable once UseMethodAny.0
+                       // ReSharper disable once UseMethodAny.0
                    where (from od in context.OrderDetails.OrderBy(od => od.OrderID).Take(2)
                           where (from c in context.Set<Customer>()
                                  where c.CustomerID == o.CustomerID
@@ -5488,6 +5488,105 @@ namespace Microsoft.EntityFrameworkCore.Query
                           .Select(e => e.EmployeeID)
                           .DefaultIfEmpty()
                        select e));
+        }
+
+        // Issue#18374
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Projection_skip_collection_projection(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new { Item = o })
+                    .Skip(5)
+                    .Select(e => new
+                    {
+                        e.Item.OrderID,
+                        ProductIds = e.Item.OrderDetails.Select(od => od.ProductID).ToList()
+                    }));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Projection_take_collection_projection(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new { Item = o })
+                    .Take(10)
+                    .Select(e => new
+                    {
+                        e.Item.OrderID,
+                        ProductIds = e.Item.OrderDetails.Select(od => od.ProductID).ToList()
+                    }));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Projection_skip_take_collection_projection(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new { Item = o })
+                    .Skip(5)
+                    .Take(10)
+                    .Select(e => new
+                    {
+                        e.Item.OrderID,
+                        ProductIds = e.Item.OrderDetails.Select(od => od.ProductID).ToList()
+                    }));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Projection_skip_projection(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new { Item = o })
+                    .Skip(5)
+                    .Select(e => new { e.Item.Customer.City }));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Projection_take_projection(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new { Item = o })
+                    .Take(10)
+                    .Select(e => new { e.Item.Customer.City }));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Projection_skip_take_projection(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new { Item = o })
+                    .Skip(5)
+                    .Take(10)
+                    .Select(e => new { e.Item.Customer.City }));
         }
     }
 }
