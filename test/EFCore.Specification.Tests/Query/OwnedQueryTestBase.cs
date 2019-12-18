@@ -418,6 +418,36 @@ namespace Microsoft.EntityFrameworkCore.Query
                 entryCount: 5);
         }
 
+        // Issue#18140
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Client_method_skip_loads_owned_navigations(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<OwnedPerson>().OrderBy(e => e.Id).Select(e => Map(e)).Skip(1));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Client_method_take_loads_owned_navigations(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<OwnedPerson>().OrderBy(e => e.Id).Select(e => Map(e)).Take(2));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Client_method_skip_take_loads_owned_navigations(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<OwnedPerson>().OrderBy(e => e.Id).Select(e => Map(e)).Skip(1).Take(2));
+        }
+
+        private static string Map(OwnedPerson person) => person.PersonAddress.Country.Name;
+
         protected virtual DbContext CreateContext() => Fixture.CreateContext();
 
         public abstract class OwnedQueryFixtureBase : SharedStoreFixtureBase<PoolableDbContext>, IQueryFixtureBase
