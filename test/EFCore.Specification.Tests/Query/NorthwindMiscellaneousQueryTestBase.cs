@@ -5588,5 +5588,58 @@ namespace Microsoft.EntityFrameworkCore.Query
                     .Take(10)
                     .Select(e => new { e.Item.Customer.City }));
         }
+
+        // Issue#19207
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Collection_projection_skip(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new
+                    {
+                        Order = o,
+                        o.OrderDetails
+                    })
+                    .Skip(5));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Collection_projection_take(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new
+                    {
+                        Order = o,
+                        o.OrderDetails
+                    })
+                    .Take(10));
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual Task Collection_projection_skip_take(bool async)
+        {
+            return AssertQuery(
+                async,
+                ss => ss.Set<Order>()
+                    .Where(o => o.OrderID < 10300)
+                    .OrderBy(o => o.OrderID)
+                    .Select(o => new
+                    {
+                        Order = o,
+                        o.OrderDetails
+                    })
+                    .Skip(5)
+                    .Take(10));
+        }
     }
 }
